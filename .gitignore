@@ -1,0 +1,6 @@
+node_modules/*
+uploads/*
+*.zip
+.user.ini
+App_Data
+.well-known
