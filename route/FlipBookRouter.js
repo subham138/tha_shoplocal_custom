@@ -10,9 +10,13 @@ const FlipBookSave = (data, fileName) => {
         // console.log(chk_dt);
         var flip_id = 0, res_dt
         if (chk_dt.suc > 0 && chk_dt.msg.length == 0) {
+            var last_dt = await db_Select('IF(MAX(id) > 0, MAX(id)+1, 1) last_id', 'td_flipbook', null, null);
             var table_name = 'td_flipbook',
                 fields = '(hotel_id, guest_id, guest_name, room_no, check_in, check_out, flip_url, created_by, created_dt)',
-                values = `(${data.hotel_id}, ${data.guest_id}, '${data.user_name}', ${data.room_no}, '${dateFormat(data.check_in, "yyyy-mm-dd HH:MM:ss")}', '${dateFormat(data.check_out, "yyyy-mm-dd HH:MM:ss")}', '${data.flip_url}', '${data.user}', '${datetime}')`,
+                values = `(${data.hotel_id}, ${data.guest_id}, '${data.user_name}', ${data.room_no}, 
+                '${dateFormat(data.check_in, "yyyy-mm-dd HH:MM:ss")}', '${dateFormat(data.check_out, "yyyy-mm-dd HH:MM:ss")}', 
+                '${last_dt.suc > 0 && last_dt.msg.length > 0 ? data.flip_url.split('/')[0] + '/' + last_dt.msg[0].max_id : data.flip_url}', 
+                '${data.user}', '${datetime}')`,
                 whr = null,
                 flag = 0;
             res_dt = await db_Insert(table_name, fields, values, whr, flag)
@@ -22,8 +26,8 @@ const FlipBookSave = (data, fileName) => {
         }
         if (flip_id > 0) {
             var table_name = 'td_flipbook_img',
-                fields = '(flip_id, img_catg, img_path, created_by, created_dt)',
-                values = `(${flip_id}, '${data.flag}', '${fileName}', '${data.user}', '${datetime}')`,
+                fields = '(flip_id, img_catg, img_path, img_title, created_by, created_dt)',
+                values = `(${flip_id}, '${data.flag}', '${fileName}', '${data.img_title}', '${data.user}', '${datetime}')`,
                 whr = null,
                 flag = 0;
             res_dt = await db_Insert(table_name, fields, values, whr, flag)

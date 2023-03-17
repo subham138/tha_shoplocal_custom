@@ -181,7 +181,7 @@ UserRouter.get('/chk_guest_user', async (req, res) => {
 
     var select = 'count(id) count_id',
         table_name = 'td_flipbook',
-        whr = `guest_id = ${data.user_id} AND approve_flag = 'P'`,
+        whr = `guest_id = ${data.user_id}`,
         order = null
     var chk_user = await db_Select(select, table_name, whr, order)
     res_dt['flip_flag'] = chk_user.suc > 0 && chk_user.msg[0].count_id > 0 ? 1 : 0
