@@ -56,6 +56,7 @@ const { UserRouter } = require('./route/UserRouter');
 const { DashboardRouter } = require('./route/DashboardRouter');
 const { FaqRouter } = require('./route/FaqRouter');
 const { LostFoundRouter } = require('./route/LostFoundRouter');
+const { FlipBookRouter } = require('./route/FlipBookRouter');
 ///////////////////////////////////////////
 
 io.on('connection', async function (socket) {
@@ -123,6 +124,8 @@ app.use(DashboardRouter)
 app.use(FaqRouter)
 
 app.use(LostFoundRouter)
+
+app.use(FlipBookRouter)
 
 
 app.get('/', async (req, res) => {

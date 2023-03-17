@@ -21,6 +21,7 @@ const { DifImgSave, DifCovImgSave } = require("../modules/AdminModule");
 const { save_message } = require("./MessageCenterRouter");
 const { saveAvatar, saveVoice } = require("./ConciergeRouter");
 const { db_Check, db_Insert } = require("../modules/MasterModule");
+const { FlipBookSave } = require("./FlipBookRouter");
 
 TestRouter.use(upload());
 
@@ -737,8 +738,8 @@ TestRouter.post("/save_other_qr", async (req, res) => {
       flag == 0
         ? "dynamic_img"
         : flag == 1
-        ? "v_card_img"
-        : "fun_directory_img",
+          ? "v_card_img"
+          : "fun_directory_img",
     pre_name =
       flag == 0 ? "dynamic_qr" : flag == 1 ? "v_card_qr" : "fun_directory_qr",
     img = req.files ? (req.files.img ? req.files.img : false) : false,
@@ -839,9 +840,8 @@ const SaveOtherQr = (
     var table_name = "md_url",
       fields =
         chk_dt.suc > 0 && chk_dt.msg > 0
-          ? `url = "${menu_url}"${
-              bitly ? ', bitly_url ="' + bitly + '"' : ""
-            }, ${field_name} = "${filename}"`
+          ? `url = "${menu_url}"${bitly ? ', bitly_url ="' + bitly + '"' : ""
+          }, ${field_name} = "${filename}"`
           : `(hotel_id, srv_res_flag, srv_res_id, url, bitly_url, ${field_name})`,
       values = `(${data.hotel_id}, '${data.srv_res_flag}', '${data.srv_res_id}', "${menu_url}", "${bitly}", "${filename}")`,
       whr =
@@ -1032,5 +1032,42 @@ const voice_file_save = (data, files) => {
     }
   });
 };
+
+TestRouter.post('/flip_upload', async (req, res) => {
+  var data = req.body
+  var files = req.files ? req.files.img : null;
+  var res_dt = await saveFlipBookImages(data, files)
+  res.send(res_dt);
+})
+
+const saveFlipBookImages = (data, files) => {
+  return new Promise(async (resolve, reject) => {
+    var dir = 'uploads/flipBook',
+      folderPath = `${data.user_name.split(' ').join('_')}_H${data.hotel_id}_R${data.room_no}`,
+      subDir = `${dir}/${folderPath}`,
+      img_name = files.name.split(' ').join('_'), res_dt;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    if (!fs.existsSync(subDir)) {
+      fs.mkdirSync(subDir);
+    }
+    if (files) {
+      files.mv(`${subDir}/${img_name}`, async (err) => {
+        if (err) {
+          console.log(`${img_name} not uploaded`);
+          res_dt = { suc: 0, msg: "err" };
+        } else {
+          console.log(`Successfully ${img_name} uploaded`);
+          res_dt = await FlipBookSave(data, `flipBook/${folderPath}/${img_name}`);
+        }
+        resolve(res_dt);
+      });
+    } else {
+      res_dt = { suc: 0, msg: "No File Found" };
+      resolve(res_dt);
+    }
+  })
+}
 
 module.exports = { TestRouter, UploadLogo };
