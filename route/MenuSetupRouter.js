@@ -136,7 +136,7 @@ MenuSetRouter.get("/section", async (req, res) => {
         : menu_id == "S"
         ? "Special"
         : "Menuservice List";
-  let whr = menu_id > 0 ? `AND a.menu_id = "${menu_id}"` : "";
+  let whr = menu_id ? `AND a.menu_id = "${menu_id}"` : "";
   let sql = `SELECT a.*, '${menu_name}' menu_name FROM md_section a WHERE a.hotel_id = ${hotel_id} AND a.restaurant_id = "${res_id}" ${whr}`;
   var data = await F_Select(sql);
   res.send(data);

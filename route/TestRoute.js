@@ -21,7 +21,7 @@ const { DifImgSave, DifCovImgSave } = require("../modules/AdminModule");
 const { save_message } = require("./MessageCenterRouter");
 const { saveAvatar, saveVoice } = require("./ConciergeRouter");
 const { db_Check, db_Insert } = require("../modules/MasterModule");
-const { FlipBookSave } = require("./FlipBookRouter");
+const { FlipBookSave, FileApprove } = require("./FlipBookRouter");
 
 TestRouter.use(upload());
 
@@ -1065,6 +1065,38 @@ const saveFlipBookImages = (data, files) => {
       });
     } else {
       res_dt = { suc: 0, msg: "No File Found" };
+      resolve(res_dt);
+    }
+  })
+}
+
+TestRouter.post('/flip_approve', async (req, res) => {
+  var data = req.body
+  var files = req.files ? req.files.bg_img : null;
+  var res_dt = await saveFlipBackImages(data, files)
+  res.send(res_dt);
+})
+
+const saveFlipBackImages = (data, files) => {
+  return new Promise(async (resolve, reject) => {
+    var dir = 'uploads/flipBook',
+      folderPath = `${data.hotel_id}`,
+      subDir = `${dir}`,
+      img_name = files.name.split(' ').join('_'), res_dt;
+
+    if (files) {
+      files.mv(`${subDir}/${img_name}`, async (err) => {
+        if (err) {
+          console.log(`${img_name} not uploaded`);
+          res_dt = { suc: 0, msg: "err" };
+        } else {
+          console.log(`Successfully ${img_name} uploaded`);
+          res_dt = await FileApprove(data, `flipBook/${img_name}`);
+        }
+        resolve(res_dt);
+      });
+    } else {
+      res_dt = await FileApprove(data, null);
       resolve(res_dt);
     }
   })

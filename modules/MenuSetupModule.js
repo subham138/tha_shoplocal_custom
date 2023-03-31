@@ -294,90 +294,90 @@ const DeleteDatetime = (data) => {
 }
 
 const LogoSave = async (data, logo_img) => {
-  var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-  var chk_dt = await Check_Data(
-    (db_name = "td_logo"),
-    (whr = `WHERE hotel_id = "${data.hotel_id}"  AND srv_res_flag = "${data.srv_res_flag}" AND srv_res_id = "${data.srv_res_id}"`)
-  );
-  var sql = "";
-  if (chk_dt > 1) {
-    sql = `INSERT INTO td_logo (hotel_id, srv_res_flag, srv_res_id, logo_url, logo_path, created_by, created_dt) VALUES
+    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+    var chk_dt = await Check_Data(
+        (db_name = "td_logo"),
+        (whr = `WHERE hotel_id = "${data.hotel_id}"  AND srv_res_flag = "${data.srv_res_flag}" AND srv_res_id = "${data.srv_res_id}"`)
+    );
+    var sql = "";
+    if (chk_dt > 1) {
+        sql = `INSERT INTO td_logo (hotel_id, srv_res_flag, srv_res_id, logo_url, logo_path, created_by, created_dt) VALUES
         ("${data.hotel_id}", "${data.srv_res_flag}", "${data.srv_res_id}", "${data.logo}", "${logo_img}", "${data.hotel_id}", "${datetime}")`;
-  } else if (chk_dt == 1) {
-    sql = `UPDATE td_logo SET logo_url = "${data.logo}", logo_path = "${logo_img}", modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
+    } else if (chk_dt == 1) {
+        sql = `UPDATE td_logo SET logo_url = "${data.logo}", logo_path = "${logo_img}", modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
         WHERE hotel_id = "${data.hotel_id}"  AND srv_res_flag = "${data.srv_res_flag}" AND srv_res_id = "${data.srv_res_id}"`;
-  }
+    }
     //   console.log(sql);
     // var sql = `INSERT INTO td_logo (restaurant_id, logo_url, created_by, created_dt) VALUES
     // ("${data.restaurant_id}", "${data.logo}", "${data.restaurant_id}", "${datetime}")`;
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, lastId) => {
-      if (err) {
-        console.log(err);
-        data = { suc: 0, msg: JSON.stringify(err) };
-      } else {
-        data = { suc: 1, msg: "Inserted Successfully !!" };
-      }
-      resolve(data);
+    return new Promise((resolve, reject) => {
+        db.query(sql, (err, lastId) => {
+            if (err) {
+                console.log(err);
+                data = { suc: 0, msg: JSON.stringify(err) };
+            } else {
+                data = { suc: 1, msg: "Inserted Successfully !!" };
+            }
+            resolve(data);
+        });
     });
-  });
 };
 
 const AboutUsSave = async (data) => {
     var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-  var chk_dt = await Check_Data(
-    (db_name = "td_about"),
-    (whr = `WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.restaurant_id}"`)
-  );
-  var sql = "";
-  if (chk_dt > 1) {
-    sql = `INSERT INTO td_about (hotel_id, restaurant_id, about_us, created_by, created_dt) VALUES 
+    var chk_dt = await Check_Data(
+        (db_name = "td_about"),
+        (whr = `WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.restaurant_id}"`)
+    );
+    var sql = "";
+    if (chk_dt > 1) {
+        sql = `INSERT INTO td_about (hotel_id, restaurant_id, about_us, created_by, created_dt) VALUES 
         ("${data.hotel_id}", "${data.restaurant_id}", "${data.aboutus}", "${data.restaurant_id}", "${datetime}")`;
-  } else if (chk_dt == 1) {
-    sql = `UPDATE td_about SET about_us = "${data.aboutus}", modified_by = "${data.restaurant_id}", modified_dt = "${datetime}" WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.restaurant_id}"`;
-  }
+    } else if (chk_dt == 1) {
+        sql = `UPDATE td_about SET about_us = "${data.aboutus}", modified_by = "${data.restaurant_id}", modified_dt = "${datetime}" WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.restaurant_id}"`;
+    }
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, lastId) => {
-      if (err) {
-        console.log(err);
-        data = { suc: 0, msg: JSON.stringify(err) };
-      } else {
-        data = { suc: 1, msg: "Inserted Successfully !!" };
-      }
-      resolve(data);
+    return new Promise((resolve, reject) => {
+        db.query(sql, (err, lastId) => {
+            if (err) {
+                console.log(err);
+                data = { suc: 0, msg: JSON.stringify(err) };
+            } else {
+                data = { suc: 1, msg: "Inserted Successfully !!" };
+            }
+            resolve(data);
+        });
     });
-  });
 }
 
 const NoticeSave = async (data) => {
-  var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-  let chk_dt = await Check_Data(
-    (db_name = "td_menu_notice"),
-    (whr = `WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.id}" AND menu_id = "${data.menu}"`)
-  );
-  var sql = "";
-  if (chk_dt > 1) {
-    sql = `INSERT INTO td_menu_notice (hotel_id, restaurant_id, menu_id, notice_flag, position_id, header_title, font_color, back_color, notice_content, created_by, created_dt) VALUES 
+    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+    let chk_dt = await Check_Data(
+        (db_name = "td_menu_notice"),
+        (whr = `WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.id}" AND menu_id = "${data.menu}"`)
+    );
+    var sql = "";
+    if (chk_dt > 1) {
+        sql = `INSERT INTO td_menu_notice (hotel_id, restaurant_id, menu_id, notice_flag, position_id, header_title, font_color, back_color, notice_content, created_by, created_dt) VALUES 
     ("${data.hotel_id}", "${data.id}", "${data.menu}", "${data.notice_flag}", "${data.position}", "${data.headertitle}", "${data.fontcolor}", "${data.back_color}", "${data.notice}", "${data.id}", "${datetime}")`;
-  } else {
-    sql = `UPDATE td_menu_notice SET notice_flag = "${data.notice_flag}", position_id = "${data.position}",
+    } else {
+        sql = `UPDATE td_menu_notice SET notice_flag = "${data.notice_flag}", position_id = "${data.position}",
          header_title = "${data.headertitle}", font_color = "${data.fontcolor}", back_color = "${data.back_color}", notice_content = "${data.notice}", 
          modified_by = "${data.id}", modified_dt = "${datetime}" WHERE hotel_id = ${data.hotel_id} AND restaurant_id = "${data.id}" AND menu_id = "${data.menu}"`;
-  }
+    }
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, lastId) => {
-      if (err) {
-        console.log(err);
-        data = { suc: 0, msg: JSON.stringify(err) };
-      } else {
-        data = { suc: 1, msg: "Inserted Successfully !!" };
-      }
-      resolve(data);
+    return new Promise((resolve, reject) => {
+        db.query(sql, (err, lastId) => {
+            if (err) {
+                console.log(err);
+                data = { suc: 0, msg: JSON.stringify(err) };
+            } else {
+                data = { suc: 1, msg: "Inserted Successfully !!" };
+            }
+            resolve(data);
+        });
     });
-  });
 };
 
 const F_Select = (sql) => {
@@ -418,15 +418,15 @@ const SectionSave = (data, sec_img) => {
     var sql = '',
         up_fild = '',
         in_field = '';
-	if (data.id > 0) {
-		up_fild = sec_img != "" ? `, section_img = "${sec_img}"` : "";
-		sql = `UPDATE md_section SET section_name = "${data.sec_name}" ${up_fild}, modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
+    if (data.id > 0) {
+        up_fild = sec_img != "" ? `, section_img = "${sec_img}"` : "";
+        sql = `UPDATE md_section SET section_name = "${data.sec_name}" ${up_fild}, modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
 WHERE section_id = "${data.id}"`;
-	} else {
-		in_field = sec_img != "" ? sec_img : "";
-		sql = `INSERT INTO md_section (hotel_id, restaurant_id, menu_id, section_name, section_img, created_by, created_dt) VALUES
+    } else {
+        in_field = sec_img != "" ? sec_img : "";
+        sql = `INSERT INTO md_section (hotel_id, restaurant_id, menu_id, section_name, section_img, created_by, created_dt) VALUES
 ("${data.hotel_id}", "${data.srv_res_id}", "${data.menu_id}", "${data.sec_name}", "${in_field}", "${data.hotel_id}", "${datetime}")`;
-	}
+    }
     return new Promise((resolve, reject) => {
         db.query(sql, (err, lastId) => {
             if (err) {
@@ -441,40 +441,40 @@ WHERE section_id = "${data.id}"`;
 }
 
 const ItemSave = (data) => {
-  var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-  var sql = "";
-  if (data.id > 0) {
-    sql = `UPDATE md_service_items SET item_name = "${data.item_name}", modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
+    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+    var sql = "";
+    if (data.id > 0) {
+        sql = `UPDATE md_service_items SET item_name = "${data.item_name}", modified_by = "${data.hotel_id}", modified_dt = "${datetime}"
         WHERE service_item_id = "${data.id}"`;
-  } else {
-    sql = `INSERT INTO md_service_items (hotel_id, section_id, item_name, created_by, created_dt)
+    } else {
+        sql = `INSERT INTO md_service_items (hotel_id, section_id, item_name, created_by, created_dt)
      VALUES ("${data.hotel_id}", "${data.sec_id}", "${data.item_name}", "${data.hotel_id}", "${datetime}")`;
-  }
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, lastId) => {
-      if (err) {
-        console.log(err);
-        data = { suc: 0, msg: JSON.stringify(err) };
-      } else {
-        data = { suc: 1, msg: "Inserted Successfully !!" };
-      }
-      resolve(data);
+    }
+    return new Promise((resolve, reject) => {
+        db.query(sql, (err, lastId) => {
+            if (err) {
+                console.log(err);
+                data = { suc: 0, msg: JSON.stringify(err) };
+            } else {
+                data = { suc: 1, msg: "Inserted Successfully !!" };
+            }
+            resolve(data);
+        });
     });
-  });
 };
 
 const ItemPriceSave = (data) => {
     var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
     var sql = '';
-	if (data.id > 0) {
-		sql = `UPDATE md_service_item_description SET item_price = "${data.item_price}", item_desc = "${data.item_desc}", 
+    if (data.id > 0) {
+        sql = `UPDATE md_service_item_description SET item_price = "${data.item_price}", item_desc = "${data.item_desc}", 
 item_note = "${data.item_note}", note_color = "${data.note_color}", note_back_color = "${data.note_back_color}", 
 modified_by = "${data.restaurant_id}", modified_dt = "${datetime}" 
 WHERE service_item_id = "${data.id}"`;
-	} else {
-		sql = `INSERT INTO md_service_item_description (service_item_id, item_price, item_desc, item_note, note_color, note_back_color, created_by, created_dt)
+    } else {
+        sql = `INSERT INTO md_service_item_description (service_item_id, item_price, item_desc, item_note, note_color, note_back_color, created_by, created_dt)
 VALUES ("${data.item_id}", "${data.item_price}", "${data.item_desc}", "${data.item_note}", "${data.note_color}", "${data.note_back_color}", "${data.restaurant_id}", "${datetime}")`;
-	}
+    }
 
     return new Promise((resolve, reject) => {
         db.query(sql, (err, lastId) => {

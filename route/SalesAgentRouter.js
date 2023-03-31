@@ -65,7 +65,7 @@ SalesAgentRouter.post('/sales_login', async (req, res) => {
     } else {
         msg_dt = { suc: 0, msg: 'No user found' }
     }
-	msg_dt['sql'] = res_dt.sql
+    msg_dt['sql'] = res_dt.sql
     res.send(msg_dt)
 })
 
@@ -101,14 +101,14 @@ SalesAgentRouter.post('/sub_sales_agent', async (req, res) => {
 })
 
 SalesAgentRouter.get("/sub_sales_agent", async (req, res) => {
-  var data = req.query;
-  // console.log(data);
-  var select = "*",
-    table_name = "md_sub_sales_agent",
-    whr = data.id > 0 ? `id = ${data.id}` : `sales_id=${data.sales_id}`,
-    order = null;
-  var res_dt = await db_Select(select, table_name, whr, order);
-  res.send(res_dt);
+    var data = req.query;
+    // console.log(data);
+    var select = "*",
+        table_name = "md_sub_sales_agent",
+        whr = data.id > 0 ? `id = ${data.id}` : `sales_id=${data.sales_id}`,
+        order = null;
+    var res_dt = await db_Select(select, table_name, whr, order);
+    res.send(res_dt);
 });
 
 module.exports = { SalesAgentRouter }

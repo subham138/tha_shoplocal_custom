@@ -5,6 +5,67 @@ const { F_Select } = require('../modules/MenuSetupModule');
 const { db_Select } = require("../modules/MasterModule");
 const MenuRouter = express.Router();
 
+MenuRouter.get('/dynamic_menu', async (req, res) => {
+    var data = req.query, select, table_name, whr, order, sec_dt, item_dt, all_item = {}, menu_dt = {};
+    var dt = {
+        Monday: 1,
+        Tuesday: 2,
+        Wednesday: 3,
+        Thursday: 4,
+        Friday: 5,
+        Saturday: 6,
+        Sunday: 7,
+    };
+    var now_date = dateFormat(new Date(), "dddd"),
+        currDate = dt[now_date];
+
+    // GET USER TIMEZONE AND SET TIME AS LOCAL TIME ZONE //
+    var date_sql = `SELECT * FROM td_contacts_custom WHERE id = "${data.hotel_id}"`;
+    var con_dt = await F_Select(date_sql);
+    var zone = con_dt.msg[0].time_zone;
+    // console.log({ zone });
+    let loc_time = zone != '' ? new Date().toLocaleString('en-US', { timeZone: zone }) : new Date();
+    let curr_time = dateFormat(loc_time, "HH:MM:ss");
+    // END //
+    select = '*'
+    table_name = `td_date_time a`
+    whr = `a.srv_res_flag = '${data.srv_res_flag}' AND a.srv_res_id = ${data.srv_res_id} AND a.active_flag = 'Y' AND a.month_day = ${currDate} AND a.start_time <= '${curr_time}' AND a.end_time >= '${curr_time}'`
+    order = null
+    var res_dt = await db_Select(select, table_name, whr, order)
+
+    if (res_dt.suc > 0) {
+        if (res_dt.msg.length > 0) {
+            for (let dt of res_dt.msg) {
+                select = 'section_id, hotel_id, menu_id, section_name, section_img'
+                table_name = 'md_section'
+                whr = `hotel_id = ${data.hotel_id} AND restaurant_id = ${data.srv_res_id} AND menu_id = '${dt.menu_id}'`
+                order = null
+                sec_dt = await db_Select(select, table_name, whr, order)
+                // console.log(sec_dt);
+                if (sec_dt.suc > 0 && sec_dt.msg.length > 0) {
+                    for (let sec of sec_dt.msg) {
+                        select = 'a.service_item_id item_id, a.item_name, b.item_price, b.item_desc, b.item_note, b.note_color, b.note_back_color'
+                        table_name = 'md_service_items a, md_service_item_description b'
+                        whr = `a.service_item_id = b.service_item_id AND a.hotel_id = ${data.hotel_id} AND a.section_id = ${sec.section_id}`
+                        order = null
+                        item_dt = await db_Select(select, table_name, whr, order)
+                        // item = 
+                        all_item[sec.section_name] = {
+                            sec_img: sec.section_img,
+                            res: item_dt.suc > 0 ? item_dt.msg : []
+                        }
+                        // all_item[sec.section_name]['sec_img'] = dt.section_img
+                        menu_dt[dt.menu_id] = all_item
+                        // console.log(menu_dt);
+                    }
+                }
+            }
+        }
+    }
+    // console.log(currDate, curr_time);
+    res.send({ suc: 1, msg: menu_dt })
+})
+
 MenuRouter.get('/preview_menu', async (req, res) => {
     var now = new Date();
     var dt = {
@@ -32,7 +93,7 @@ MenuRouter.get('/preview_menu', async (req, res) => {
 
 MenuRouter.get('/menu_data', async (req, res) => {
     var res_id = req.query.id,
-		venue_id = req.query.venue_id,
+        venue_id = req.query.venue_id,
         menu_active_flag = 'N',
         replace_menu_id = 0,
         st_time = '',
@@ -245,71 +306,71 @@ MenuRouter.get('/get_all_menu', async (req, res) => {
 })
 
 MenuRouter.get("/static_menu", async (req, res) => {
-  var data = req.query,
-    select,
-    table_name,
-    whr,
-    order,
-    dat = {},
-    dt = {},
-    resData;
-  select =
-    "a.section_id, a.hotel_id, a.restaurant_id, a.menu_id, b.name res_name, a.section_name, a.section_img";
-  table_name = "md_section a, td_quest_res_bars b";
-  whr = `a.hotel_id=b.hotel_id AND a.restaurant_id=b.id AND a.hotel_id=${data.hotel_id} AND a.restaurant_id=${data.res_id}`;
-  order = null;
-  var res_dt = await db_Select(select, table_name, whr, order);
-  if (res_dt.suc > 0 && res_dt.msg.length > 0) {
-    for (let menu of res_dt.msg) {
-      let itemDt = await getItemBySection(data.hotel_id, menu.section_id);
-      let othImg = await getOtherImageByMenu(
-        data.hotel_id,
-        menu.restaurant_id,
-        menu.menu_id
-      );
-      if (itemDt.suc > 0 && itemDt.msg.length > 0) {
-        dat[menu.section_name] = {
-          res: itemDt.msg,
-          sec_img: menu.section_img,
-          cover_img:
-            othImg.suc > 0 && othImg.msg.length > 0
-              ? othImg.msg[0].cover_page_img
-              : "",
-          top_img:
-            othImg.suc > 0 && othImg.msg.length > 0
-              ? othImg.msg[0].top_image_img
-              : "",
-        };
-        dt[menu.menu_id] = dat;
-      }
+    var data = req.query,
+        select,
+        table_name,
+        whr,
+        order,
+        dat = {},
+        dt = {},
+        resData;
+    select =
+        "a.section_id, a.hotel_id, a.restaurant_id, a.menu_id, b.name res_name, a.section_name, a.section_img";
+    table_name = "md_section a, td_quest_res_bars b";
+    whr = `a.hotel_id=b.hotel_id AND a.restaurant_id=b.id AND a.hotel_id=${data.hotel_id} AND a.restaurant_id=${data.res_id}`;
+    order = null;
+    var res_dt = await db_Select(select, table_name, whr, order);
+    if (res_dt.suc > 0 && res_dt.msg.length > 0) {
+        for (let menu of res_dt.msg) {
+            let itemDt = await getItemBySection(data.hotel_id, menu.section_id);
+            let othImg = await getOtherImageByMenu(
+                data.hotel_id,
+                menu.restaurant_id,
+                menu.menu_id
+            );
+            if (itemDt.suc > 0 && itemDt.msg.length > 0) {
+                dat[menu.section_name] = {
+                    res: itemDt.msg,
+                    sec_img: menu.section_img,
+                    cover_img:
+                        othImg.suc > 0 && othImg.msg.length > 0
+                            ? othImg.msg[0].cover_page_img
+                            : "",
+                    top_img:
+                        othImg.suc > 0 && othImg.msg.length > 0
+                            ? othImg.msg[0].top_image_img
+                            : "",
+                };
+                dt[menu.menu_id] = dat;
+            }
+        }
     }
-  }
-  resData = { suc: res_dt.suc, msg: dt };
-  res.send(resData);
+    resData = { suc: res_dt.suc, msg: dt };
+    res.send(resData);
 });
 
 const getItemBySection = async (hotel_id, sec_id) => {
-  return new Promise(async (resolve, reject) => {
-    var select =
-        "a.hotel_id, a.item_name, b.item_price, b.item_desc, b.item_note, b.note_color, b.note_back_color",
-      table_name = "md_service_items a, md_service_item_description b",
-      whr = `a.service_item_id=b.service_item_id AND a.section_id = ${sec_id} AND a.hotel_id = ${hotel_id}`,
-      order = null;
-    var res_dt = await db_Select(select, table_name, whr, order);
-    resolve(res_dt);
-  });
+    return new Promise(async (resolve, reject) => {
+        var select =
+            "a.hotel_id, a.item_name, b.item_price, b.item_desc, b.item_note, b.note_color, b.note_back_color",
+            table_name = "md_service_items a, md_service_item_description b",
+            whr = `a.service_item_id=b.service_item_id AND a.section_id = ${sec_id} AND a.hotel_id = ${hotel_id}`,
+            order = null;
+        var res_dt = await db_Select(select, table_name, whr, order);
+        resolve(res_dt);
+    });
 };
 
 const getOtherImageByMenu = (hotel_id, res_id, menu_id) => {
-  return new Promise(async (resolve, reject) => {
-    var select =
-        "hotel_id, srv_res_flag, srv_res_id, menu_id, cover_page_img, top_image_img",
-      table_name = "td_other_image",
-      whr = `hotel_id = ${hotel_id} AND srv_res_id = ${res_id} AND menu_id = '${menu_id}'`,
-      order = null;
-    var res_dt = await db_Select(select, table_name, whr, order);
-    resolve(res_dt);
-  });
+    return new Promise(async (resolve, reject) => {
+        var select =
+            "hotel_id, srv_res_flag, srv_res_id, menu_id, cover_page_img, top_image_img",
+            table_name = "td_other_image",
+            whr = `hotel_id = ${hotel_id} AND srv_res_id = ${res_id} AND menu_id = '${menu_id}'`,
+            order = null;
+        var res_dt = await db_Select(select, table_name, whr, order);
+        resolve(res_dt);
+    });
 };
 
 module.exports = { MenuRouter }
