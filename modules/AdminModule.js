@@ -431,18 +431,18 @@ const GenerateBitlyUrl = async (url, hotel_id, srv_res_flag, srv_res_id) => {
                 // console.log({ link });
                 var chk_dt = await db_Check('id', 'md_url', `hotel_id=${hotel_id} AND srv_res_flag = '${srv_res_flag}' AND srv_res_id = '${srv_res_id}'`)
                 var table_name = "md_url",
-                  fields =
-                    chk_dt.suc > 0 && chk_dt.msg > 0
-                      ? `url = '${url}', bitly_url = '${link}'`
-                      : "(hotel_id, srv_res_flag, srv_res_id, url, bitly_url)",
-                  values = `('${hotel_id}', '${srv_res_flag}', '${srv_res_id}', '${url}', '${link}')`,
-                  whr =
-                    chk_dt.suc > 0 && chk_dt.msg > 0
-                      ? `hotel_id=${hotel_id} AND srv_res_flag = '${srv_res_flag}' AND srv_res_id = '${srv_res_id}'`
-                      : null,
-                  flag = chk_dt.suc > 0 && chk_dt.msg > 0 ? 1 : 0;
+                    fields =
+                        chk_dt.suc > 0 && chk_dt.msg > 0
+                            ? `url = '${url}', bitly_url = '${link}'`
+                            : "(hotel_id, srv_res_flag, srv_res_id, url, bitly_url)",
+                    values = `('${hotel_id}', '${srv_res_flag}', '${srv_res_id}', '${url}', '${link}')`,
+                    whr =
+                        chk_dt.suc > 0 && chk_dt.msg > 0
+                            ? `hotel_id=${hotel_id} AND srv_res_flag = '${srv_res_flag}' AND srv_res_id = '${srv_res_id}'`
+                            : null,
+                    flag = chk_dt.suc > 0 && chk_dt.msg > 0 ? 1 : 0;
                 var res_dt = await db_Insert(table_name, fields, values, whr, flag)
-                var res = { suc: res_dt.suc, msg: res_dt.suc> 0 ? link :JSON.stringify(err) };
+                var res = { suc: res_dt.suc, msg: res_dt.suc > 0 ? link : JSON.stringify(err) };
                 resolve(res)
                 // var sql = `UPDATE md_url SET bitly_url = "${link}" WHERE restaurant_id = "${res_id}"`;
                 // // console.log({ sql });
@@ -623,14 +623,18 @@ const sendQuest = async (id, user) => {
 };
 
 const saveQuest = async (data) => {
-    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), sql;
+    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+        currDate = dateFormat(new Date(), "yyyy-mm-dd"), sql;
+    var chk_dt = await db_Select('id', 'td_qustionnaire', `hotel_id = ${data.res_id}`, null)
+    data.id = chk_dt.suc > 0 && chk_dt.msg.length > 0 ? chk_dt.msg[0].id : 0
+    console.log(data.id);
     if (data.id > 0) {
         sql = `UPDATE td_qustionnaire SET num_of_rooms = ${data.num_of_rooms}, platform_lang = '${data.platform_lang}',
          primary_lang = '${data.primary_lang}', add_lang_platform = '${data.add_lang_paltform}', num_of_res = ${data.num_of_res}, 
-         num_of_bars = ${data.num_of_bars}, hotel_part_of_chain = '${data.chain}', quote = '${data.quote}', comments = '${datetime}' WHERE id = ${data.id}`
+         num_of_bars = ${data.num_of_bars}, hotel_part_of_chain = '${data.chain}', quote = '${data.quote}', comments = '${datetime}', receive_dt = '${currDate}' WHERE id = ${data.id}`
     } else {
-        sql = `INSERT INTO td_qustionnaire (hotel_id, num_of_rooms, platform_lang, primary_lang, add_lang_platform, num_of_res, num_of_bars, hotel_part_of_chain, quote, comments, created_by, created_dt) VALUES 
-    (${data.res_id}, ${data.num_of_rooms}, '${data.platform_lang}', '${data.primary_lang}', '${data.add_lang_paltform}', ${data.num_of_res}, ${data.num_of_bars}, '${data.chain}', '${data.quote}', '${data.comments}', '${data.user}', '${datetime}')`;
+        sql = `INSERT INTO td_qustionnaire (hotel_id, num_of_rooms, platform_lang, primary_lang, add_lang_platform, num_of_res, num_of_bars, hotel_part_of_chain, quote, comments, receive_dt, created_by, created_dt) VALUES 
+    (${data.res_id}, ${data.num_of_rooms}, '${data.platform_lang}', '${data.primary_lang}', '${data.add_lang_paltform}', ${data.num_of_res}, ${data.num_of_bars}, '${data.chain}', '${data.quote}', '${data.comments}', '${currDate}', '${data.user}', '${datetime}')`;
     }
 
     return new Promise((resolve, reject) => {
@@ -683,8 +687,9 @@ const saveQuestRest = async (data) => {
                 WHERE id = ${dt.id}`
             } else {
                 sql = `INSERT INTO td_quest_res_bars (hotel_id, hotel_type, name, breakfast, lunch, dinner, brunch, bar_menu, special_menu, chat_option, reservation, reservation_paltform, reservation_option, created_by, created_dt) VALUES 
-    (${data.res_id}, '${dt.hotel_type}', '${dt.name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.bar_menu && dt.bar_menu != '' ? 'Y' : 'N'}', '${dt.special_menu && dt.special_menu != '' ? 'Y' : 'N'}', '${dt.chat_option}', '${dt.reservation}', '${dt.reservation_paltform}', '${dt.reservation_option}', '${data.user}', '${datetime}')`;
+    (${data.res_id}, '${dt.hotel_type}', '${dt.name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.bar_menu && dt.bar_menu != '' ? 'Y' : 'N'}', '${dt.special_menu && dt.special_menu != '' ? 'Y' : 'N'}', '${dt.chat_option}', '${dt.reservation}', '${dt.reservation_paltform}', ${dt.reservation_option && dt.reservation_option != '' ? 'Y' : null}, '${data.user}', '${datetime}')`;
             }
+            console.log(sql);
 
             db.query(sql, (err, lastId) => {
                 if (err) {
