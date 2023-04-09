@@ -189,4 +189,17 @@ UserRouter.get('/chk_guest_user', async (req, res) => {
     res.send(res_dt)
 })
 
+UserRouter.get('/get_user_list', async (req, res) => {
+    var data = req.query
+    var select = `a.id, a.hotel_id, b.restaurant_name, a.user_name, IF(a.user_type = 'V', 'VIP', IF(a.user_type = 'G', 'Group', 'Guest')) user_type, a.mobile_no, a.email_id, c.check_in, c.check_out, c.room_no`,
+      table_name = "td_guest_user a, td_contacts_custom b, td_lodgging c",
+      whr =
+        data.hotel_id > 0
+          ? `a.hotel_id = b.id AND a.id=c.guest_id AND a.user_type != 'E' AND ${data.flag == 'P' ? (data.frm_dt && data.to_dt ? 'DATE(c.check_in) >= DATE("'+ data.frm_dt + '") AND c.check_out <= DATE("'+ data.to_dt + '")' : 'c.check_in <= now() AND c.check_out <= now()') : (data.frm_dt && data.to_dt ? 'DATE(c.check_in) >= DATE("'+ data.frm_dt + '") AND c.check_out <= DATE("'+ data.to_dt + '")' : 'c.check_in <= now() AND c.check_out >= now()')} AND a.hotel_id = ${data.hotel_id}`
+          : `a.hotel_id = b.id AND a.id=c.guest_id AND a.user_type != 'E' AND c.check_in <= now() AND c.check_out >= now()`,
+      order = null;
+    var res_dt = await db_Select(select, table_name, whr, order);
+    res.send(res_dt);
+})
+
 module.exports = { UserRouter }

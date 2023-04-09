@@ -6,7 +6,7 @@ const { db_Select } = require("../modules/MasterModule");
 const MenuRouter = express.Router();
 
 MenuRouter.get('/dynamic_menu', async (req, res) => {
-    var data = req.query, select, table_name, whr, order, sec_dt, item_dt, all_item = {}, menu_dt = {};
+    var data = req.query, select, table_name, whr, order, sec_dt, item_dt, all_item = {}, menu_dt = {}, oth_img_dt;
     var dt = {
         Monday: 1,
         Tuesday: 2,
@@ -43,6 +43,12 @@ MenuRouter.get('/dynamic_menu', async (req, res) => {
                 sec_dt = await db_Select(select, table_name, whr, order)
                 // console.log(sec_dt);
                 if (sec_dt.suc > 0 && sec_dt.msg.length > 0) {
+                    select = "cover_page_img, top_image_img";
+                    table_name = "td_other_image";
+                    whr = `hotel_id = ${data.hotel_id} AND srv_res_id = ${data.srv_res_id} AND menu_id = '${dt.menu_id}'`;
+                    order = null
+                    oth_img_dt = await db_Select(select, table_name, whr, order)
+
                     for (let sec of sec_dt.msg) {
                         select = 'a.service_item_id item_id, a.item_name, b.item_price, b.item_desc, b.item_note, b.note_color, b.note_back_color'
                         table_name = 'md_service_items a, md_service_item_description b'
@@ -55,9 +61,12 @@ MenuRouter.get('/dynamic_menu', async (req, res) => {
                             res: item_dt.suc > 0 ? item_dt.msg : []
                         }
                         // all_item[sec.section_name]['sec_img'] = dt.section_img
-                        menu_dt[dt.menu_id] = all_item
+
+                        menu_dt[dt.menu_id] = {sec: all_item}
                         // console.log(menu_dt);
                     }
+                    menu_dt[dt.menu_id]["cov_img"] = oth_img_dt.suc > 0 && oth_img_dt.msg.length > 0 ? oth_img_dt.msg[0].cover_page_img : null;
+                    menu_dt[dt.menu_id]["top_img"] = oth_img_dt.suc > 0 && oth_img_dt.msg.length > 0 ? oth_img_dt.msg[0].top_image_img : null;
                 }
             }
         }
@@ -314,37 +323,58 @@ MenuRouter.get("/static_menu", async (req, res) => {
         dat = {},
         dt = {},
         resData;
-    select =
-        "a.section_id, a.hotel_id, a.restaurant_id, a.menu_id, b.name res_name, a.section_name, a.section_img";
-    table_name = "md_section a, td_quest_res_bars b";
-    whr = `a.hotel_id=b.hotel_id AND a.restaurant_id=b.id AND a.hotel_id=${data.hotel_id} AND a.restaurant_id=${data.res_id}`;
-    order = null;
-    var res_dt = await db_Select(select, table_name, whr, order);
-    if (res_dt.suc > 0 && res_dt.msg.length > 0) {
-        for (let menu of res_dt.msg) {
-            let itemDt = await getItemBySection(data.hotel_id, menu.section_id);
-            let othImg = await getOtherImageByMenu(
-                data.hotel_id,
-                menu.restaurant_id,
-                menu.menu_id
-            );
-            if (itemDt.suc > 0 && itemDt.msg.length > 0) {
-                dat[menu.section_name] = {
-                    res: itemDt.msg,
-                    sec_img: menu.section_img,
-                    cover_img:
-                        othImg.suc > 0 && othImg.msg.length > 0
-                            ? othImg.msg[0].cover_page_img
-                            : "",
-                    top_img:
-                        othImg.suc > 0 && othImg.msg.length > 0
-                            ? othImg.msg[0].top_image_img
-                            : "",
-                };
-                dt[menu.menu_id] = dat;
+        select = "DISTINCT section_id, hotel_id, restaurant_id, menu_id";
+        table_name = "md_section";
+        whr = `hotel_id=${data.hotel_id} AND restaurant_id=${data.res_id}`;
+        order = `GROUP BY menu_id`;
+        var menu_dt = await db_Select(select, table_name, whr, order);
+        // console.log(menu_dt);
+    if(menu_dt.suc > 0 && menu_dt.msg.length > 0){
+        for(let menu of menu_dt.msg){
+            dat = {}
+            select =
+            "a.section_id, a.hotel_id, a.restaurant_id, a.menu_id, b.name res_name, a.section_name, a.section_img";
+            table_name = "md_section a, td_quest_res_bars b";
+            whr = `a.hotel_id=b.hotel_id AND a.restaurant_id=b.id AND a.hotel_id=${data.hotel_id} AND a.restaurant_id=${data.res_id} AND a.menu_id = '${menu.menu_id}'`;
+            order = null;
+            var res_dt = await db_Select(select, table_name, whr, order);
+            console.log('INIT', res_dt);
+            if(res_dt.suc > 0 && res_dt.msg.length > 0){
+                for(let sec of res_dt.msg){
+                    let itemDt = await getItemBySection(data.hotel_id, sec.section_id);
+                    // console.log(itemDt);
+                    let othImg = await getOtherImageByMenu(data.hotel_id, sec.restaurant_id, sec.menu_id); 
+                    if (itemDt.suc > 0 && itemDt.msg.length > 0) {
+                        dat[sec.section_name] = {
+                            res: itemDt.msg,
+                            sec_img: sec.section_img,
+                            cover_img: othImg.suc > 0 && othImg.msg.length > 0 ? othImg.msg[0].cover_page_img : "",
+                            top_img: othImg.suc > 0 && othImg.msg.length > 0 ? othImg.msg[0].top_image_img : "",
+                        };
+                        dt[menu.menu_id] = dat;
+                    }
+                }
             }
         }
     }
+    
+    // // console.log(res_dt);
+    // if (res_dt.suc > 0 && res_dt.msg.length > 0) {
+    //     for (let menu of res_dt.msg) {
+    //         let itemDt = await getItemBySection(data.hotel_id, menu.section_id);
+    //         console.log(itemDt);
+    //         let othImg = await getOtherImageByMenu(data.hotel_id, menu.restaurant_id, menu.menu_id);
+    //         if (itemDt.suc > 0 && itemDt.msg.length > 0) {
+    //             dat[menu.section_name] = {
+    //                 res: itemDt.msg,
+    //                 sec_img: menu.section_img,
+    //                 cover_img: othImg.suc > 0 && othImg.msg.length > 0 ? othImg.msg[0].cover_page_img : "",
+    //                 top_img: othImg.suc > 0 && othImg.msg.length > 0 ? othImg.msg[0].top_image_img : "",
+    //             };
+    //             dt[menu.menu_id] = dat;
+    //         }
+    //     }
+    // }
     resData = { suc: res_dt.suc, msg: dt };
     res.send(resData);
 });

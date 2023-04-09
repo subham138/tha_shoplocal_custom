@@ -1,3 +1,4 @@
+const { sendUserEmail } = require("../modules/EmailModule");
 const { db_Insert, db_Select } = require("../modules/MasterModule");
 const { Check_Data } = require("../modules/MenuSetupModule");
 
@@ -19,21 +20,26 @@ SalesAgentRouter.get('/sales_agent', async (req, res) => {
 
 SalesAgentRouter.post('/sales_agent', async (req, res) => {
     var data = req.body,
-        datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+        datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+        currDate = dateFormat(new Date(), "yyyy-mm-dd");
     var table_name = "md_sales_agent",
-        fields =
-            data.id > 0
-                ? `agent_name = '${data.agent_name}', address = '${data.address}',
+      fields =
+        data.id > 0
+          ? `agent_name = '${data.agent_name}', address = '${data.address}',
         phone_no = '${data.phone}', whatsapp_no = '${data.whatsapp}', 
         email = '${data.email}', start_date = '${data.start_date}', 
-        territory = '${data.territory}', frst_comm = '${data.frst_comm}', snd_comm = '${data.snd_comm}', comments = '${data.comments}'
-        ${data.email_title ? ', email_title = "' + data.email_title + '"' : ''}${data.email_body ? ', email_body = "' + data.email_body + '"' : ''}
+        territory = '${data.territory}', frst_comm = '${
+              data.frst_comm
+            }', snd_comm = '${data.snd_comm}', comments = '${data.comments}'
+        ${
+          data.email_title ? ', email_title = "' + data.email_title + '"' : ""
+        }${data.email_body ? ', email_body = "' + data.email_body + '"' : ""}
         , modified_by = '${data.user}', modified_dt = '${datetime}'`
-                : `(agent_name, address, phone_no, whatsapp_no, email, start_date, territory, frst_comm, snd_comm, comments, email_title, email_body, created_by, created_dt)`,
-        values = `('${data.agent_name}', '${data.address}', '${data.phone}', '${data.whatsapp}',
-        '${data.email}', '${data.start_date}', '${data.territory}', '${data.frst_comm}', '${data.snd_comm}', '${data.comments}', '${data.email_title}', '${data.email_body}', '${data.user}', '${datetime}')`,
-        whr = data.id > 0 ? `id = ${data.id}` : null,
-        flag = data.id > 0 ? 1 : 0;
+          : `(agent_name, address, phone_no, whatsapp_no, email, start_date, territory, frst_comm, snd_comm, comments, email_title, email_body, email_send_dt, created_by, created_dt)`,
+      values = `('${data.agent_name}', '${data.address}', '${data.phone}', '${data.whatsapp}',
+        '${data.email}', '${data.start_date}', '${data.territory}', '${data.frst_comm}', '${data.snd_comm}', '${data.comments}', '${data.email_title}', '${data.email_body}', '${currDate}', '${data.user}', '${datetime}')`,
+      whr = data.id > 0 ? `id = ${data.id}` : null,
+      flag = data.id > 0 ? 1 : 0;
     var res_dt = await db_Insert(table_name, fields, values, whr, flag);
     if (data.msg_flag) {
         var password = bcrypt.hashSync(data.pwd, 10);
@@ -44,6 +50,9 @@ SalesAgentRouter.post('/sales_agent', async (req, res) => {
         whr = data.id > 0 ? `id = ${data.id}` : null
         flag = data.id > 0 ? 1 : 0;
         let pwd_res_dt = await db_Insert(table_name, fields, values, whr, flag);
+        if(pwd_res_dt.suc > 0){
+            await sendUserEmail(data.email, data.email_body, data.email_title);
+        }
     }
     res.send(res_dt);
 })

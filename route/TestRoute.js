@@ -22,6 +22,7 @@ const { save_message } = require("./MessageCenterRouter");
 const { saveAvatar, saveVoice } = require("./ConciergeRouter");
 const { db_Check, db_Insert } = require("../modules/MasterModule");
 const { FlipBookSave, FileApprove } = require("./FlipBookRouter");
+const { CalendarSaveData } = require("./CalenderRouter");
 
 TestRouter.use(upload());
 
@@ -1101,5 +1102,42 @@ const saveFlipBackImages = (data, files) => {
     }
   })
 }
+
+
+
+TestRouter.post("/calendar", async (req, res) => {
+  var data = req.body;
+  var files = req.files ? (req.files.img ? req.files.img : null) : null;
+  // console.log(files);
+  var res_dt = await calendar_file_save(data, files);
+  res.send(res_dt);
+});
+
+const calendar_file_save = (data, files) => {
+  return new Promise(async (resolve, reject) => {
+    var dir = 'uploads/calendar'
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    var img_name, img_path, res_dt;
+    if (files) {
+      img_name = data.hotel_id + "_" + files.name;
+      img_path = 'calendar/' + img_name;
+      files.mv(`${dir}/${img_name}`, async (err) => {
+        if (err) {
+          console.log(`${img_name} not uploaded`);
+          res = { suc: 0, msg: "err" };
+        } else {
+          console.log(`Successfully ${img_name} uploaded`);
+          res_dt = await CalendarSaveData(data, img_path);
+        }
+        resolve(res_dt);
+      });
+    } else {
+      res_dt = await CalendarSaveData(data, null);
+      resolve(res_dt);
+    }
+  });
+};
 
 module.exports = { TestRouter, UploadLogo };
