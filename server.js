@@ -63,6 +63,7 @@ const { DashboardRouter } = require("./route/DashboardRouter");
 const { FaqRouter } = require("./route/FaqRouter");
 const { LostFoundRouter } = require("./route/LostFoundRouter");
 const { FlipBookRouter } = require("./route/FlipBookRouter");
+const { TrainingRouter } = require("./route/TrainingRouter");
 ///////////////////////////////////////////
 
 io.on("connection", async function (socket) {
@@ -132,6 +133,8 @@ app.use(FaqRouter);
 app.use(LostFoundRouter);
 
 app.use(FlipBookRouter);
+
+app.use(TrainingRouter)
 
 app.get("/", async (req, res) => {
   // var alpha = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
