@@ -8,16 +8,16 @@ UserRouter.post('/group_leader', async (req, res) => {
     var data = req.body,
         datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
         table_name, fields, values, whr, flag, res_dt;
-    if (data.group_leader_flag == 'Y') {
-        table_name = 'td_group'
-        fields = data.id > 0 ? `group_name = '${data.group_name}', leader_name = '${data.user_name}', no_of_people = '${data.no_of_people}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
-            `(hotel_id, group_name, leader_name, no_of_people, created_by, created_dt)`
-        values = `(${data.hotel_id}, '${data.group_name}', '${data.user_name}', '${data.no_of_people}', '${data.user}', '${datetime}')`
-        whr = data.id > 0 ? `id = ${data.id}` : null
-        flag = data.id > 0 ? 1 : 0
+	if (data.group_leader_flag == 'Y') {
+		table_name = 'td_group'
+		fields = data.id > 0 ? `group_name = '${data.group_name}', leader_name = '${data.user_name}', no_of_people = '${data.no_of_people}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+			`(hotel_id, group_name, leader_name, no_of_people, created_by, created_dt)`
+		values = `(${data.hotel_id}, '${data.group_name}', '${data.user_name}', '${data.no_of_people}', '${data.user}', '${datetime}')`
+		whr = data.id > 0 ? `id = ${data.id}` : null
+		flag = data.id > 0 ? 1 : 0
 
-        var grup_dt = await db_Insert(table_name, fields, values, whr, flag)
-    }
+		var grup_dt = await db_Insert(table_name, fields, values, whr, flag)
+	}
     var group_id = data.id > 0 ? data.id : (grup_dt.suc > 0 ? grup_dt.lastId.insertId : 0)
 
     if (group_id > 0) {
@@ -35,7 +35,7 @@ UserRouter.post('/group_leader', async (req, res) => {
         values = `('${data.hotel_id}', '${data.user_name}', '${data.user_type}', '${data.mobile_no}', '${data.email_id}', '${password}', '${group_id}', '${data.leader_flag}', '${data.email_title}', '${data.email_body}', '${data.user}', '${datetime}')`
         whr = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? `id = ${chk_user.msg[0].id}` : null
         flag = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? 1 : 0
-
+        
         res_dt = await db_Insert(table_name, fields, values, whr, flag)
 
         var user_id = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? chk_user.msg[0].id : (res_dt.suc > 0 ? res_dt.lastId.insertId : 0)
@@ -56,7 +56,7 @@ UserRouter.post('/group_leader', async (req, res) => {
 
             res_dt = await db_Insert(table_name, fields, values, whr, flag)
         }
-        res.send(res_dt)
+        res.send(res_dt) 
     } else {
         res.send(grup_dt)
     }
@@ -123,7 +123,7 @@ UserRouter.get('/guest_user_dt', async (req, res) => {
     var data = req.query
     var select = 'a.id, a.user_name, a.user_type, a.mobile_no, a.email_id, a.group_emp_id, a.group_leader_flag, a.email_title, a.email_body, b.check_in, b.check_out, b.room_no, b.status_flag',
         table_name = 'td_guest_user a, td_lodgging b',
-        whr = data.id > 0 ? `a.id = ${data.id}` : `a.id=b.guest_id AND a.hotel_id = ${data.hotel_id} ${data.group_id > 0 ? 'AND a.group_emp_id =' + data.group_id : ''} AND a.user_type = 'G' AND b.check_in <= now() AND b.check_out >= now() ${data.flag ? 'AND a.group_leader_flag ="' + data.flag + '"' : ''}`,
+        whr = data.id > 0 ? `a.id = ${data.id}` : `a.id=b.guest_id AND a.hotel_id = ${data.hotel_id} ${data.group_id > 0 ? 'AND a.group_emp_id =' + data.group_id : ''} AND a.user_type = 'G' AND b.check_in <= now() AND b.check_out >= now() ${data.flag ? 'AND a.group_leader_flag ="' +  data.flag + '"' : ''}`,
         order = null
     var res_dt = await db_Select(select, table_name, whr, order)
     res.send(res_dt)
@@ -179,19 +179,19 @@ UserRouter.get('/chk_guest_user', async (req, res) => {
     var res_dt = await db_Select(select, table_name, whr, order)
     res_dt['active_flag'] = res_dt.suc > 0 && res_dt.msg.length > 0 ? 1 : 0
 
-    var select = 'count(id) count_id',
+    var select = 'count(id) count_id, pay_flag, no_of_pages, pay_flag, addition_flag',
         table_name = 'td_flipbook',
         whr = `guest_id = ${data.user_id}`,
         order = null
     var chk_user = await db_Select(select, table_name, whr, order)
     res_dt['flip_flag'] = chk_user.suc > 0 && chk_user.msg[0].count_id > 0 ? 1 : 0
-
+	res_dt['addition_flag'] = chk_user.suc > 0 ? chk_user.msg[0].addition_flag : 'N'
     res.send(res_dt)
 })
 
 UserRouter.get('/get_user_list', async (req, res) => {
     var data = req.query
-    var select = `a.id, a.hotel_id, b.restaurant_name, a.user_name, IF(a.user_type = 'V', 'VIP', IF(a.user_type = 'G', 'Group', 'Guest')) user_type, a.mobile_no, a.email_id, c.check_in, c.check_out, c.room_no`,
+    var select = `a.id, a.hotel_id, b.restaurant_name, a.user_name, IF(a.user_type = 'V', 'VIP', IF(a.user_type = 'G', 'Group', 'Guest')) user_type, a.mobile_no, a.email_id, c.check_in, c.check_out, a.pref_lang, c.room_no`,
       table_name = "td_guest_user a, td_contacts_custom b, td_lodgging c",
       whr =
         data.hotel_id > 0
@@ -200,6 +200,16 @@ UserRouter.get('/get_user_list', async (req, res) => {
       order = null;
     var res_dt = await db_Select(select, table_name, whr, order);
     res.send(res_dt);
+})
+
+UserRouter.get('/get_emer_user_list', async (req, res) => {
+    var data = req.query
+    var select = `a.id, a.hotel_id, a.user_name, a.user_type, b.room_no, b.check_in, b.check_out`,
+    table_name = `td_guest_user a, td_lodgging b`,
+    whr = `a.id=b.guest_id AND a.hotel_id = ${data.hotel_id} ${data.flag != 'E' ? 'AND b.check_in <= DATE(now()) AND b.check_out >= DATE(now())' : ''}`,
+    order = null;
+    var res_dt = await db_Select(select, table_name, whr, order);
+    res.send(res_dt)
 })
 
 module.exports = { UserRouter }

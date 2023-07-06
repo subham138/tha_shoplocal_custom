@@ -17,13 +17,12 @@ QuestRouter.get('/quest_dt', async (req, res) => {
 
 QuestRouter.post('/quest_dt', async (req, res) => {
     var data = req.body
-    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
-        currDate = dateFormat(new Date(), "yyyy-mm-dd");
+    var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss")
     var table_name = 'td_qustionnaire',
         fields = data.id > 0 ?
             `${data.first_call_dt && data.first_call_dt != 'undefined' ? 'first_call_dt = "' + data.first_call_dt + '",' : ''} admin_note = '${data.admin_note}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
-            `(hotel_id${data.first_call_dt && data.first_call_dt != 'undefined' ? ', first_call_dt' : ''}, admin_note, send_dt, created_by, created_dt)`,
-        values = `('${data.hotel_id}'${data.first_call_dt && data.first_call_dt != 'undefined' ? ', "' + data.first_call_dt + '"' : ''}, '${data.admin_note}', '${currDate}', '${data.user}', '${datetime}')`,
+            `(hotel_id${data.first_call_dt && data.first_call_dt != 'undefined' ? ', first_call_dt' : ''}, admin_note, created_by, created_dt)`,
+        values = `('${data.hotel_id}'${data.first_call_dt && data.first_call_dt != 'undefined' ? ', "' + data.first_call_dt + '"' : ''}, '${data.admin_note}', '${data.user}', '${datetime}')`,
         whr = data.id > 0 ? `id = ${data.id} AND hotel_id = ${data.hotel_id}` : null,
         flag = data.id > 0 ? 1 : 0;
     var res_dt = await db_Insert(table_name, fields, values, whr, flag)
@@ -92,12 +91,12 @@ QuestRouter.post('/send_quest', async (req, res) => {
 })
 
 QuestRouter.post("/send_quest_to_admin", async (req, res) => {
-    var data = req.body;
-    var res_dt = await sendQuestEmailtoAdmin(data.email, data.path, 'A', data.hotel_name); //{ suc: 1 }//
-    if (res_dt.suc > 0) {
-        await sendQuest(data.hotel_id, data.user);
-    }
-    res.send(res_dt);
+  var data = req.body;
+  var res_dt = await sendQuestEmailtoAdmin(data.email, data.path, 'A', data.hotel_name); //{ suc: 1 }//
+  if (res_dt.suc > 0) {
+    await sendQuest(data.hotel_id, data.user);
+  }
+  res.send(res_dt);
 });
 
 QuestRouter.get('/quest_dtls_del', async (req, res) => {

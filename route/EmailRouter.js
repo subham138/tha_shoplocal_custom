@@ -4,9 +4,10 @@ const EmailRouter = express.Router();
 
 EmailRouter.get('/approve_menu', async (req, res) => {
     let res_id = req.query.id,
-		v_id = req.query.venue_id;
-    var data = await ConfirmMenu(res_id, v_id);
-    res.send(data);
+		v_id = req.query.venue_id,
+        data = req.query;
+    var res_data = await ConfirmMenu(res_id, v_id, data);
+    res.send(res_data);
 })
 
 EmailRouter.post('/approve_menu', async (req, res) => {

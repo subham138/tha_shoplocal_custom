@@ -33,15 +33,16 @@ var email_transporter = nodemailer.createTransport({
     }
 });
 
-const ConfirmMenu = async (res_id, v_id) => {
+const ConfirmMenu = async (res_id, v_id, req_dt) => {
     var data = '';
-    let qr_sql = `SELECT * FROM md_url_custom WHERE restaurant_id = "${res_id}" AND venue_id = "${v_id}"`;
+    let qr_sql = `SELECT * FROM md_url WHERE hotel_id = ${req_dt.hotel_id} AND srv_res_flag = '${req_dt.srv_res_flag}' AND srv_res_id = '${req_dt.srv_res_id}'`;
     let qr = await F_Select(qr_sql);
-    let con_sql = `SELECT * FROM td_contacts_custom WHERE id = "${res_id}"`;
+    let con_sql = `SELECT * FROM td_contacts_custom WHERE id = "${req_dt.hotel_id}"`;
     let con = await F_Select(con_sql);
     let parm_sql = `SELECT * FROM md_parm_value`;
     let param = await F_Select(parm_sql);
     var img = qr.msg[0].dynamic_img,
+        v_card_img = qr.msg[0].v_card_img,
         con_name = con.msg[0].contact_name,
         email = con.msg[0].email,
         pro_name = param.msg[0].param_value,
@@ -49,7 +50,7 @@ const ConfirmMenu = async (res_id, v_id) => {
     console.log({ pro_name, email_name, con_name });
 
     return new Promise(async (resolve, reject) => {
-        data = await send_email(res_id, email, img, con_name, pro_name, email_name);
+        data = await send_email(req_dt.hotel_id, email, img, con_name, pro_name, email_name);
         resolve(data);
     })
     //return data;
@@ -92,7 +93,7 @@ const send_email = async (res_id, email_id, img, con_name, pro_name, email_name)
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are pleased to confirm that we have completed the building of your Digital Menu!</p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">There is now just one final step before it can golive..you must approve the Menu</p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">To do this please scan the QR Code below which will take you to the Menu. Go through the entire Menu and when you have finished click on the button blow to confirm your approval or reject it if there are any errors.</p>'
-                + '<p style="padding-bottom:15px; margin:0;"><img src="' + api_url + img + '" width="128" height="128" alt=""></p>'
+                + '<p style="padding-bottom:15px; margin:0;"><img src="' + api_url + encodeURIComponent(img) + '" width="128" height="128" alt=""></p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
                 + email_name + '<br>'
                 + pro_name + '</p>'
@@ -824,7 +825,7 @@ const RejectPayProposal = async (res_id, en_dt, issue) => {
         var mailOptions = {
             from: 'admin@shoplocal-lagunabeach.com',
             to: email_id,
-            subject: 'Custom Menu Order Proposal',
+            subject: 'Proposal Rejection Notification',
             html: '<!DOCTYPE html>'
                 + '<html>'
                 + '<head>'
@@ -845,8 +846,8 @@ const RejectPayProposal = async (res_id, en_dt, issue) => {
                 + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi ' + email_name + ',</h2>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">A restaurent, ' + res_name + ' has raised some issues regarding custom menu. Issues are mentioned below.</p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">' + issue + '</p>'
-                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">For Preview the proposal page please click the link mentioned below.</p>'
-                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><a href="' + client_url + 'payment/' + en_dt + '/1">CLICK HERE</a></p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">For Preview the proposal page please check on no sale under all hotel section.</p>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><a href="' + client_url + 'payment/' + en_dt + '/1">CLICK HERE</a></p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
                 + contact_name + '<br>'
                 + res_name + '<br>'
@@ -1101,6 +1102,93 @@ const sendPropEmail = async (email_id, path, res_name) => {
   });
 };
 
+const sendPropAcceptEmail = async (res_id) => {
+    let con_sql = `SELECT restaurant_name, contact_name, email, phone_no FROM td_contacts_custom WHERE id = "${res_id}"`;
+    var con = await F_Select(con_sql);
+
+    var email_id = con.suc > 0 ? con.msg[0].email : null,
+        res_name = con.suc > 0 ? con.msg[0].restaurant_name : null,
+        res_phone = con.suc > 0 ? con.msg[0].phone_no : null,
+        res_email = con.suc > 0 ? con.msg[0].email : null,
+        contact_name = con.suc > 0 ? con.msg[0].contact_name : null
+    // var type = 3;
+    // let sql = `SELECT email_type_id, email_body FROM md_config_email WHERE email_type_id = ${type}`;
+    // var sql_dt = await F_Select(sql);
+    // var email_body = sql_dt.msg[0].email_body;
+  
+    // let con_sql = `SELECT * FROM td_contacts_custom WHERE id = "${res_id}"`;
+    // let con = await F_Select(con_sql);
+    let parm_sql = `SELECT * FROM md_parm_value`;
+    let param = await F_Select(parm_sql);
+    // var contact_name = con.msg[0].contact_name,
+    // email_id = con.msg[0].email,
+    var pro_name = param.msg[0].param_value,
+      email_name = param.msg[1].param_value;
+    return new Promise(async (resolve, reject) => {
+      // FOR LOCAL
+      var transporter = email_transporter;
+  
+      var mailOptions = {
+        from: "admin@shoplocal-lagunabeach.com",
+        to: email_id,
+        subject: "Shoplocal Proposal Accept Notification",
+        html:
+          "<!DOCTYPE html>" +
+          "<html>" +
+          "<head>" +
+          '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />' +
+          "<title>ShopLocal</title>" +
+          '<style type="text/css">' +
+          "body{margin:0; padding:0; font-family:14px; font-family:Arial, Helvetica, sans-serif;}" +
+          "</style>" +
+          "</head>" +
+          "<body>" +
+          '<div class="sectionArea" style="max-width:750px; width:100%; margin:2% auto 2% auto; padding:15px; background:#faf9f9; border-radius:15px;border: #ececec solid 1px;">' +
+          '<table width="100%" border="0" cellspacing="0" cellpadding="0">' +
+          "<tr>" +
+          '<td align="left" valign="top" class="logoArea" style="padding:0 0 25px 0; text-align:center;"><img src="https://eporiseva.com/sll_logo.png" width="402" height="300" alt="" style="max-width:190px; width:100%; height:auto; margin:0 auto;"></td>' +
+          "</tr>" +
+          "<tr>" +
+          '<td align="left" valign="top">' +
+          '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi '+pro_name+',</h2>' +
+          // + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Congratulations</h2>'
+          // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are happy to have you as a part of the Shop Local Laguna family!</p>'
+          // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your payment has been done successfully.</p>'
+          '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Congratulations.. '+res_name+' has accepted your proposal.</p>' +
+          // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your login credentials are as follow</p>'
+          // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><b>UserName:</b> ' + email_id + '<br><b>Password:</b> ' + password + '</p>'
+          // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Please click on the link bellow to login.</p>'
+          '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Yours Sincerely</strong>,<br>' +
+          res_name +
+          "<br>" +
+          res_email +
+          "<br>" +
+          res_phone +
+          "</p>" +
+          '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">' +
+          '<a href="' +
+          client_url + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;' +
+          'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Go to proposal</a>' +
+          "</p></td>" +
+          "</tr>" +
+          "</table>" +
+          "</div>" +
+          "</body>" +
+          "</html>",
+      };
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.log(error);
+          data = { suc: 0, msg: JSON.stringify(error) };
+        } else {
+          console.log("Email sent: " + info.response);
+          data = { suc: 1, msg: "Email sent: " + info.response };
+        }
+        resolve(data);
+      });
+    });
+};
+
 const sendUserEmail = async (email_id, body, title) => {
   return new Promise(async (resolve, reject) => {
     // FOR LOCAL
@@ -1149,4 +1237,239 @@ const sendUserEmail = async (email_id, body, title) => {
   });
 };
 
-module.exports = { ConfirmMenu, ApproveMenu, OrderEmail, PayEmail, UserCredential, PromoConfirmMail, PromoEmail, SendPayProposal, RejectPayProposal, EnqueryEmailRes, sendQuestEmail, sendQuestEmailtoAdmin, sendPropEmail, sendUserEmail};
+const SendFlipDetailsUser = async (user_id, password, flip_url, email_id, guest_name) => {
+    // var type = 3;
+    // let sql = `SELECT email_type_id, email_body FROM md_config_email WHERE email_type_id = ${type}`;
+    // var sql_dt = await F_Select(sql);
+    // var email_body = sql_dt.msg[0].email_body;
+
+    // let con_sql = `SELECT * FROM td_contacts_custom WHERE id = "${res_id}"`;
+    // let con = await F_Select(con_sql);
+    let parm_sql = `SELECT * FROM md_parm_value`;
+    let param = await F_Select(parm_sql);
+    var pro_name = param.msg[0].param_value,
+        email_name = param.msg[1].param_value;
+    return new Promise(async (resolve, reject) => {
+        // FOR LOCAL
+        var transporter = email_transporter;
+
+        var mailOptions = {
+            from: 'admin@shoplocal-lagunabeach.com',
+            to: email_id,
+            subject: 'FlipBook Details',
+            html: '<!DOCTYPE html>'
+                + '<html>'
+                + '<head>'
+                + '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+                + '<title>ShopLocal</title>'
+                + '<style type="text/css">'
+                + 'body{margin:0; padding:0; font-family:14px; font-family:Arial, Helvetica, sans-serif;}'
+                + '</style>'
+                + '</head>'
+                + '<body>'
+                + '<div class="sectionArea" style="max-width:750px; width:100%; margin:2% auto 2% auto; padding:15px; background:#faf9f9; border-radius:15px;border: #ececec solid 1px;">'
+                + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+                + '<tr>'
+                + '<td align="left" valign="top" class="logoArea" style="padding:0 0 25px 0; text-align:center;"><img src="https://eporiseva.com/sll_logo.png" width="402" height="300" alt="" style="max-width:190px; width:100%; height:auto; margin:0 auto;"></td>'
+                + '</tr>'
+                + '<tr>'
+                + '<td align="left" valign="top">'
+                + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi ' + guest_name + ',</h2>'
+                + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Congratulations</h2>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are happy to have you as a part of the Shop Local Laguna family!</p>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your payment has been done successfully.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">You have created your FlipBook successfully.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">To view your FlipBook please <a href="https://flipbook.shoplocal-lagunabeach.com/#/'+ flip_url +'">Click Here</a>.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your can access your FlipBook after checkout with your login credentials are as follow</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><b>UserName:</b> ' + user_id + '<br><b>Password:</b> ' + password + '</p>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Please click on the link bellow to login.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
+                + email_name + '<br>'
+                + pro_name + '</p>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
+                // + '<a href="' + client_url + '/login" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+                // + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Login</a>'
+                // + '</p>'
+                +'</td>'
+                + '</tr>'
+                + '</table>'
+                + '</div>'
+                + '</body>'
+                + '</html>'
+        };
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                data = { suc: 0, msg: JSON.stringify(error) };
+            } else {
+                console.log('Email sent: ' + info.response);
+                data = { suc: 1, msg: 'Email sent: ' + info.response };
+            }
+            resolve(data);
+        });
+
+    })
+}
+
+const SendEmailPreReg = (email_id, user_name, reg_url) => {
+    return new Promise(async (resolve, reject) => {
+        let parm_sql = `SELECT * FROM md_parm_value`;
+        let param = await F_Select(parm_sql);
+        var pro_name = param.msg[0].param_value,
+            email_name = param.msg[1].param_value;
+        var transporter = email_transporter;
+        var mailOptions = {
+            from: 'admin@shoplocal-lagunabeach.com',
+            to: email_id,
+            subject: 'Pre-Registration URL',
+            html: '<!DOCTYPE html>'
+                + '<html>'
+                + '<head>'
+                + '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+                + '<title>ShopLocal</title>'
+                + '<style type="text/css">'
+                + 'body{margin:0; padding:0; font-family:14px; font-family:Arial, Helvetica, sans-serif;}'
+                + '</style>'
+                + '</head>'
+                + '<body>'
+                + '<div class="sectionArea" style="max-width:750px; width:100%; margin:2% auto 2% auto; padding:15px; background:#faf9f9; border-radius:15px;border: #ececec solid 1px;">'
+                + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+                + '<tr>'
+                + '<td align="left" valign="top" class="logoArea" style="padding:0 0 25px 0; text-align:center;"><img src="https://eporiseva.com/sll_logo.png" width="402" height="300" alt="" style="max-width:190px; width:100%; height:auto; margin:0 auto;"></td>'
+                + '</tr>'
+                + '<tr>'
+                + '<td align="left" valign="top">'
+                + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi ' + user_name + ',</h2>'
+                + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">We are excited to host you as a part of our guest family.</h2>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are happy to have you as a part of the Shop Local Laguna family!</p>'
+                // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your payment has been done successfully.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">You can access our application by completing the pre-registration form.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Please click on the pre-register button to access the registration form.</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
+                + email_name + '<br>'
+                + pro_name + '</p>'
+                + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
+                + '<a href="' + reg_url + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+                + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Pre-Register</a>'
+                + '</p>'
+                +'</td>'
+                + '</tr>'
+                + '</table>'
+                + '</div>'
+                + '</body>'
+                + '</html>'
+        };
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                data = { suc: 0, msg: JSON.stringify(error) };
+            } else {
+                console.log('Email sent: ' + info.response);
+                data = { suc: 1, msg: 'Email sent: ' + info.response };
+            }
+            resolve(data);
+        });
+    })
+}
+
+const SendEmailSupport = (email_id, conct_name, conct_email, phone_no, issue, hotel_name, status, flag) => {
+    return new Promise(async (resolve, reject) => {
+        let parm_sql = `SELECT * FROM md_parm_value`;
+        let param = await F_Select(parm_sql);
+        var pro_name = param.msg[0].param_value,
+            email_name = param.msg[1].param_value;
+        var transporter = email_transporter;
+        var body;
+        if(flag == 'A'){
+            body = '<!DOCTYPE html>'
+            + '<html>'
+            + '<head>'
+            + '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+            + '<title>Support Log</title>'
+            + '<style type="text/css">'
+            + 'body{margin:0; padding:0; font-family:14px; font-family:Arial, Helvetica, sans-serif;}'
+            + '</style>'
+            + '</head>'
+            + '<body>'
+            + '<div class="sectionArea" style="max-width:750px; width:100%; margin:2% auto 2% auto; padding:15px; background:#faf9f9; border-radius:15px;border: #ececec solid 1px;">'
+            + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+            + '<tr>'
+            + '<td align="left" valign="top" class="logoArea" style="padding:0 0 25px 0; text-align:center;"><img src="https://eporiseva.com/sll_logo.png" width="402" height="300" alt="" style="max-width:190px; width:100%; height:auto; margin:0 auto;"></td>'
+            + '</tr>'
+            + '<tr>'
+            + '<td align="left" valign="top">'
+            + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi ' + email_name + ',</h2>'
+            + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">A new issue has been logged. Please find the details below.</h2>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are happy to have you as a part of the Shop Local Laguna family!</p>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your payment has been done successfully.</p>'
+            + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><b>Contact Person Name:</b> '+conct_name+'<br><b>Contact Person Email:</b> '+conct_email+'<br><b>Contact Person Phone:</b> '+phone_no+'<br><b>Issue:</b> '+issue+'</p>'
+            + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
+            + conct_name + '<br>'
+            + hotel_name + '</p>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
+            // + '<a href="' + reg_url + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+            // + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Pre-Register</a>'
+            // + '</p>'
+            +'</td>'
+            + '</tr>'
+            + '</table>'
+            + '</div>'
+            + '</body>'
+            + '</html>';
+        }else{
+            body = '<!DOCTYPE html>'
+            + '<html>'
+            + '<head>'
+            + '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />'
+            + '<title>Support Log</title>'
+            + '<style type="text/css">'
+            + 'body{margin:0; padding:0; font-family:14px; font-family:Arial, Helvetica, sans-serif;}'
+            + '</style>'
+            + '</head>'
+            + '<body>'
+            + '<div class="sectionArea" style="max-width:750px; width:100%; margin:2% auto 2% auto; padding:15px; background:#faf9f9; border-radius:15px;border: #ececec solid 1px;">'
+            + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+            + '<tr>'
+            + '<td align="left" valign="top" class="logoArea" style="padding:0 0 25px 0; text-align:center;"><img src="https://eporiseva.com/sll_logo.png" width="402" height="300" alt="" style="max-width:190px; width:100%; height:auto; margin:0 auto;"></td>'
+            + '</tr>'
+            + '<tr>'
+            + '<td align="left" valign="top">'
+            + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Hi ' + conct_name + ',</h2>'
+            + '<h2 style="font-size:18px; font-weight:700; font-family:Arial, Helvetica, sans-serif;">Your ticket status is '+(status == "I" ? "In-Progress" : (status == "S" ? "Solved" : "Pending"))+'</h2>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">We are happy to have you as a part of the Shop Local Laguna family!</p>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;">Your payment has been done successfully.</p>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:22px; padding-bottom:15px; margin:0;"><b>Contact Persion Name:</b> '+conct_name+'<br><b>Contact Persion Email:</b> '+conct_email+'<br><b>Contact Persion Phone:</b> '+phone_no+'<br><b>Issue:</b> '+issue+'</p>'
+            + '<p style="font-family:Arial, Helvetica, sans-serif; font-size:13px; font-weight:400; line-height:19px; padding-bottom:15px; margin:0;"><strong>Your Sincerely</strong>,<br>'
+            + email_name + '<br>'
+            + pro_name + '</p>'
+            // + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
+            // + '<a href="' + reg_url + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+            // + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Pre-Register</a>'
+            // + '</p>'
+            +'</td>'
+            + '</tr>'
+            + '</table>'
+            + '</div>'
+            + '</body>'
+            + '</html>';
+        }
+        var mailOptions = {
+            from: 'admin@shoplocal-lagunabeach.com',
+            to: email_id,
+            subject: 'Support Log',
+            html: body
+        };
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                data = { suc: 0, msg: JSON.stringify(error) };
+            } else {
+                console.log('Email sent: ' + info.response);
+                data = { suc: 1, msg: 'Email sent: ' + info.response };
+            }
+            resolve(data);
+        });
+    })
+}
+
+module.exports = { ConfirmMenu, ApproveMenu, OrderEmail, PayEmail, UserCredential, PromoConfirmMail, PromoEmail, SendPayProposal, RejectPayProposal, EnqueryEmailRes, sendQuestEmail, sendQuestEmailtoAdmin, sendPropEmail, sendUserEmail, sendPropAcceptEmail, SendFlipDetailsUser, SendEmailPreReg, SendEmailSupport};

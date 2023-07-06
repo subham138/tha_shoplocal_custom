@@ -50,8 +50,8 @@ ConcRouter.post('/pc_voice', async (req, res) => {
     var url = data.voice_path
     if (url != '') {
         var urlList = url.split('/')
-        var fileName = `audio/${urlList[urlList.length - 1]}`
-        const file = fs.createWriteStream(`uploads/${fileName}`);
+        var fileName = `${urlList[urlList.length - 1]}`
+        const file = fs.createWriteStream('uploads/'+fileName);
 
         http.get(url, (result) => {
             result.pipe(file)
@@ -70,13 +70,13 @@ ConcRouter.post('/pc_voice', async (req, res) => {
 
 const saveVoice = async (data, voice_path) => {
     return new Promise(async (resolve, reject) => {
-        if (data.id > 0) {
-            var dt = await db_Insert(chk_table_name, chk_fields, chk_values, chk_whr, chk_flag)
-        }
+        // if (data.id > 0) {
+        //     var dt = await db_Insert(chk_table_name, chk_fields, chk_values, chk_whr, chk_flag)
+        // }
         var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         var table_name = 'td_pc_voice',
-            fields = data.id > 0 ? `${voice_path ? 'sound_path ="' + voice_path + '"' : ''}${data.active_flag == 'V' ? ', sound_flag = "N"' : (data.active_flag == 'T' ? ', msg_active_flag = "N"' : '')},
-            msg_text = '${data.msg_text}', voice_id = '${data.voice_id}', voice_speed = ${data.voice_speed}, use_premium = ${data.use_premium}, voice_path = '${data.voice_path}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+            fields = data.id > 0 ? `${voice_path ? 'sound_path ="' + voice_path + '",' : ''}${data.active_flag == 'V' ? ' sound_flag = "N",' : (data.active_flag == 'T' ? ', msg_active_flag = "N",' : '')}
+            msg_text = '${data.msg_text}', voice_id = '${data.voice_id}', voice_speed = "${data.voice_speed ? data.voice_speed : 0}", use_premium = "${data.use_premium}", voice_path = '${data.voice_path}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
                 `(hotel_id, srv_res_flag, srv_res_id${voice_path ? ', sound_path' : ''}, voice_id, voice_speed, use_premium, voice_path
                 ${data.active_flag == 'V' ? 'sound_flag' : (data.active_flag == 'T' ? 'msg_active_flag' : '')}, msg_text, created_by, created_dt)`,
             values = `('${data.hotel_id}', '${data.srv_res_flag}', '${data.srv_res_id}'${voice_path ? ',"' + voice_path + '"' : ''}, 
@@ -489,7 +489,7 @@ ConcRouter.post('/dept_login', async (req, res) => {
         currDate = dt[now_date];
     var select = '*',
         table_name = 'td_guest_user',
-        whr = `email_id = '${data.email_id}' AND active_flag = 'Y'`,
+        whr = `mobile_no = '${data.email_id}' AND active_flag = 'Y'`,
         order = null
     var res_dt = await db_Select(select, table_name, whr, order)
     if (res_dt.suc > 0 && res_dt.msg.length > 0) {
@@ -590,10 +590,10 @@ ConcRouter.get('/emp_sche_list', async (req, res) => {
 })
 
 ConcRouter.get('/test_file_save', async (req, res) => {
-    var url = 'https://customapi.shoplocal-lagunabeach.com/1_R_1_voice_mysong.mp3'
+    var url = 'https://www.texttovoice.online/audios/v_A_arb_64a2ade3ebf1a.mp3'
     var urlList = url.split('/')
     var fileName = urlList[urlList.length - 1]
-    const file = fs.createWriteStream(fileName);
+    const file = fs.createWriteStream('uploads/'+fileName);
 
     const request = http.get(url, (result) => {
         result.pipe(file)
