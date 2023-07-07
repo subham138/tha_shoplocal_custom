@@ -98,7 +98,7 @@ const send_email = async (res_id, email_id, img, con_name, pro_name, email_name)
                 + email_name + '<br>'
                 + pro_name + '</p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
-                + '<a href="' + client_url + 'confirmation/' + res_id + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+                + '<a href="' + client_url + 'auth/confirmation_mail/' + res_id + '" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
                 + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Request Amendment</a>'
                 + '</p></td>'
                 + '</tr>'
@@ -128,11 +128,14 @@ const ApproveMenu = async (data) => {
         desc = data[0].desc,
         res = '';
     if (apr_flag == 'U') {
-        await SendAdminUnapproveMail(res_id, apr_flag, menu_list, desc);
+		return new Promise(async (resolve, reject) => {
+			var resData = await SendAdminUnapproveMail(res_id, apr_flag, menu_list, desc);
+			resolve(resData)
+		})
     } else if (apr_flag == 'A') {
         var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         var sql = `UPDATE md_url SET approval_flag = "${apr_flag}", approved_by = "${res_id}", approved_date = "${datetime}" 
-        WHERE restaurant_id = "${res_id}"`;
+        WHERE hotel_id = "${res_id}"`;
         // console.log(sql);
         return new Promise((resolve, reject) => {
             db.query(sql, (err, lastId) => {
@@ -150,45 +153,53 @@ const ApproveMenu = async (data) => {
 
 const SendAdminUnapproveMail = async (res_id, apr_flag, menu_list, desc) => {
     // console.log({ menu_list });
-    var v = '',
-        v1 = '';
-    for (let i = 0; i < menu_list.length; i++) {
-        if (menu_list[i].dt > 0) {
-            v = menu_list[i].dt;
-            if (v1 != '') {
-                v1 = v + ',' + v1;
-            } else {
-                v1 = v;
-            }
-        }
-    }
-    let menu_sql = `SELECT id, menu_description as menu_name FROM md_menu WHERE id IN(${v1})`;
-    var menu_dt = await F_Select(menu_sql);
+	return new Promise(async (resolve, reject) => {
+		var v = '',
+			v1 = '',
+			menu_dt;
+		if(menu_list.length > 0){
+			for (let i = 0; i < menu_list.length; i++) {
+				if (menu_list[i].dt > 0) {
+					v = menu_list[i].dt;
+					if (v1 != '') {
+						v1 = v + ',' + v1;
+					} else {
+						v1 = v;
+					}
+				}
+			}
+			let menu_sql = `SELECT id, menu_description as menu_name FROM md_menu WHERE id IN(${v1})`;
+			menu_dt = await F_Select(menu_sql);
 
-    console.log({ menu_dt: menu_dt.msg });
-    let con_sql = `SELECT * FROM td_contacts WHERE id = "${res_id}"`;
-    let con = await F_Select(con_sql);
-    let con_name = con.msg[0].contact_name;
-    let res_name = con.msg[0].restaurant_name;
-    let res_email = con.msg[0].email;
-    var app_chk = apr_flag == "A" ? "checked" : "",
-        unap_chk = apr_flag == "U" ? "checked" : "",
-        brk_chk = menu_list[0].dt > 0 ? 'checked="checked"' : "",
-        lun_chk = menu_list[1].dt > 0 ? 'checked="checked"' : "",
-        din_chk = menu_list[2].dt > 0 ? 'checked="checked"' : "",
-        bru_chk = menu_list[3].dt > 0 ? 'checked="checked"' : "";
-    var menu_chk_list = '<ul>';
-    menu_dt.msg.forEach(dt => {
-        console.log(dt.menu_name);
-        menu_chk_list = `${menu_chk_list} <li> ${dt.menu_name} </li>`;
-        // '<label class="container">' + dt.menu_name
-        // '<input type="checkbox" disabled>'
-    })
-    menu_chk_list = `${menu_chk_list} </ul>`;
+			console.log({ menu_dt: menu_dt.msg });
+		}
+
+		let con_sql = `SELECT * FROM td_contacts_custom WHERE id = "${res_id}"`;
+		let con = await F_Select(con_sql);
+
+		let con_name = con.msg[0].contact_name;
+		let res_name = con.msg[0].restaurant_name;
+		let res_email = con.msg[0].email;
+		var app_chk = apr_flag == "A" ? "checked" : "",
+			unap_chk = apr_flag == "U" ? "checked" : "",
+			brk_chk = menu_list.length > 0 ? (menu_list[0].dt > 0 ? 'checked="checked"' : "") : "",
+			lun_chk = menu_list.length > 0 ? (menu_list[1].dt > 0 ? 'checked="checked"' : "") : "",
+			din_chk = menu_list.length > 0 ? (menu_list[2].dt > 0 ? 'checked="checked"' : "") : "",
+			bru_chk = menu_list.length > 0 ? (menu_list[3].dt > 0 ? 'checked="checked"' : "") : "";
+		var menu_chk_list = '<ul>';
+		if(menu_list.length > 0){
+			menu_dt.msg.forEach(dt => {
+				console.log(dt.menu_name);
+				menu_chk_list = `${menu_chk_list} <li> ${dt.menu_name} </li>`;
+				// '<label class="container">' + dt.menu_name
+				// '<input type="checkbox" disabled>'
+			})
+			menu_chk_list = `${menu_chk_list} </ul>`;
+		}
     // console.log({menu_chk_list});
     // spe_chk = menu_list[4].dt > 0 ? 'checked="checked"' : "";
     // console.log({ ab: menu_list[0].dt, brk_chk, lun_chk, din_chk });
-    return new Promise(async (resolve, reject) => {
+	
         // FOR LOCAL
         var transporter = email_transporter;
 
@@ -225,7 +236,7 @@ const SendAdminUnapproveMail = async (res_id, apr_flag, menu_list, desc) => {
                 // + '<input type="radio" id="css" name="fav_language" value="CSS" ' + unap_chk + ' disabled>'
                 + '<br><br><label for="javascript">I have checked my MENU Platform, and would like to request an update</label><br><br>'
                 + 'Menu(s) that require(s) an update<br>'
-                + menu_chk_list
+                // + menu_list.length > 0 ? menu_chk_list : ''
 
                 // + '<span class="checkmark"></span>'
                 // + '</label>'
@@ -256,7 +267,8 @@ const SendAdminUnapproveMail = async (res_id, apr_flag, menu_list, desc) => {
                 + '</body>'
                 + '</html>'
         }
-        console.log(mailOptions.html);
+		// resolve(mailOptions.html);
+        // console.log(mailOptions.html);
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 console.log(error);
@@ -566,7 +578,7 @@ const UserCredential = async (res_id, password) => {
                 + email_name + '<br>'
                 + pro_name + '</p>'
                 + '<p style="font-family:Arial, Helvetica, sans-serif; padding-top:20px; padding-bottom:20px; margin:0;">'
-                + '<a href="' + client_url + '/login" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
+                + '<a href="' + client_url + '/auth" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600;'
                 + 'padding: 8px 15px; margin: 0; background: #3fb048; text-decoration: none; color: #fff; border-radius: 34px; width: 100%; display: inline-block; text-align: center; box-sizing: border-box;">Login</a>'
                 + '</p></td>'
                 + '</tr>'

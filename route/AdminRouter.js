@@ -178,24 +178,24 @@ AdmRouter.get('/download_cov', async (req, res) => {
 
 AdmRouter.get('/delete_sec', async (req, res) => {
     var id = req.query.id,
-        db_name = 'md_section_custom',
-        whr = `WHERE id = ${id}`;
+        db_name = 'md_section',
+        whr = `WHERE section_id = ${id}`;
     var data = await F_Delete(db_name, whr);
     res.send(data);
 })
 
 AdmRouter.get('/delete_item', async (req, res) => {
     var id = req.query.id,
-        db_name = 'md_items_custom',
-        whr = `WHERE id = ${id}`;
+        db_name = 'md_service_items',
+        whr = `WHERE service_item_id = ${id}`;
     var data = await F_Delete(db_name, whr);
     res.send(data);
 })
 
 AdmRouter.get('/delete_price_desc', async (req, res) => {
     var id = req.query.id,
-        db_name = 'md_item_description_custom',
-        whr = `WHERE id = ${id}`;
+        db_name = 'md_service_item_description',
+        whr = `WHERE service_item_id = ${id}`;
     var data = await F_Delete(db_name, whr);
     res.send(data);
 })
@@ -323,7 +323,7 @@ AdmRouter.get('/dept', async (req, res) => {
     var data = req.query,
         select = 'id, dept_name',
         table_name = 'md_department',
-        whr = data.id > 0 ? `id = ${data.id}` : null,
+        whr = data.id > 0 ? `id = ${data.id}` : data.hotel_id > 0 ? `hotel_id = ${data.hotel_id}` : null,
         order = null;
     var res_dt = await db_Select(select, table_name, whr, order)
     res.send(res_dt)
@@ -333,8 +333,8 @@ AdmRouter.post('/dept', async (req, res) => {
     var data = req.body,
         datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
         table_name = 'md_department',
-        fields = data.id > 0 ? `dept_name = '${data.dept_name}', modified_by='${data.user}', modified_dt='${datetime}'` : `(dept_name, created_by, created_dt)`,
-        values = `('${data.dept_name}', '${data.user}', '${datetime}')`,
+        fields = data.id > 0 ? `dept_name = '${data.dept_name}', modified_by='${data.user}', modified_dt='${datetime}'` : `(hotel_id, dept_name, created_by, created_dt)`,
+        values = `('${data.hotel_id}', '${data.dept_name}', '${data.user}', '${datetime}')`,
         whr = data.id > 0 ? `id=${data.id}` : null,
         flag = data.id > 0 ? 1 : 0;
     var res_dt = await db_Insert(table_name, fields, values, whr, flag)
