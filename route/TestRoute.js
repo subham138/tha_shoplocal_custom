@@ -16,6 +16,7 @@ const { funDirectorySaveData, SaveFunDirMenuImgDt, SaveFunDirSecMenu, FunDirCale
 const { saveDirData, dirImageSave } = require("./DirectoryRouter");
 const { SaveRaiseSupportLog } = require('./SupportLogRouter');
 const dateFormat = require("dateformat");
+const { salesAgentUpdate } = require('./SalesAgentRouter');
 
 TestRouter.use(upload());
 
@@ -1314,6 +1315,33 @@ TestRouter.post('/raise_tkt', async (req, res) => {
     });
   }else{
     var up_res = await SaveRaiseSupportLog(data, null)
+    res.send(up_res)
+  }
+})
+
+TestRouter.post('/sales_agent_update', async (req, res) => {
+  var data = req.body,
+    profile = req.files ? (req.files.profileImg ? req.files.profileImg : null) : null;
+  if(profile){
+    var dir = 'uploads/sales_profile'
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    var img_name = profile.name;
+    var img_path = 'sales_profile/' + img_name;
+    profile.mv(`${dir}/${img_name}`, async (err) => {
+      if (err) {
+        console.log(`${img_name} not uploaded`);
+        var up_res = await salesAgentUpdate(data, null)
+        res.send(up_res)
+      } else {
+        console.log(`Successfully ${img_name} uploaded`);
+        var up_res = await salesAgentUpdate(data, img_path)
+        res.send(up_res)
+      }
+    });
+  }else{
+    var up_res = await salesAgentUpdate(data, null)
     res.send(up_res)
   }
 })

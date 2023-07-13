@@ -578,7 +578,7 @@ const DeleteMenuAdditional = (id) => {
     var data = '';
     return new Promise((resolve, reject) => {
         if (id > 0) {
-            let sql = `DELETE FROM md_menu_image WHERE id = ${id}`;
+            let sql = `DELETE FROM td_menu_image WHERE id = ${id}`;
             db.query(sql, (err, lastId) => {
                 if (err) {
                     console.log(err);

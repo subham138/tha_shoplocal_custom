@@ -630,22 +630,38 @@ const saveQuest = async (data) => {
     if (data.id > 0) {
         sql = `UPDATE td_qustionnaire SET num_of_rooms = ${data.num_of_rooms}, platform_lang = '${data.platform_lang}',
          primary_lang = '${data.primary_lang}', add_lang_platform = '${data.add_lang_paltform}', num_of_res = ${data.num_of_res}, 
-         num_of_bars = ${data.num_of_bars}, hotel_part_of_chain = '${data.chain}', quote = '${data.quote}', comments = '${data.comments}', send_dt = '${currDate}', receive_dt = '${currDate}' WHERE id = ${data.id}`
+         num_of_bars = ${data.num_of_bars}, hotel_part_of_chain = '${data.chain}', quote = '${data.quote}', comments = '${data.comments}', receive_dt = '${currDate}' WHERE id = ${data.id}`
     } else {
-        sql = `INSERT INTO td_qustionnaire (hotel_id, num_of_rooms, platform_lang, primary_lang, add_lang_platform, num_of_res, num_of_bars, hotel_part_of_chain, quote, comments, receive_dt, created_by, created_dt) VALUES 
+        sql = `INSERT INTO td_qustionnaire (hotel_id, num_of_rooms, platform_lang, primary_lang, add_lang_platform, num_of_res, num_of_bars, hotel_part_of_chain, quote, comments, send_dt, created_by, created_dt) VALUES 
     (${data.res_id}, ${data.num_of_rooms}, '${data.platform_lang}', '${data.primary_lang}', '${data.add_lang_paltform}', ${data.num_of_res}, ${data.num_of_bars}, '${data.chain}', '${data.quote}', '${data.comments}', '${currDate}', '${data.user}', '${datetime}')`;
     }
 
+    // console.log('Quest Sql', sql);
+
     return new Promise((resolve, reject) => {
-        db.query(sql, (err, lastId) => {
+        db.query(sql, async (err, lastId) => {
             if (err) {
                 console.log(err);
                 res = { suc: 0, msg: JSON.stringify(err) }
             } else {
+				data.id > 0 ? await UpdateUserQuestStatus(data.res_id) : ''
                 res = { suc: 1, msg: 'Successfully Inserted !!' };
             }
             resolve(res);
         })
+    })
+}
+
+const UpdateUserQuestStatus = (hotel_id) => {
+    return new Promise(async (resolve, reject) => {
+        var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss")
+        var table_name = `td_contacts_custom`, 
+        fields = `questionnaire_send = 'Y', questionnaire_send_dt = '${datetime}'`, 
+        values = null, 
+        whr = `id = ${hotel_id}`, 
+        flag = 1;
+        var res_dt = await db_Insert(table_name, fields, values, whr, flag)
+        resolve(res_dt)
     })
 }
 

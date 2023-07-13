@@ -103,7 +103,7 @@ AdmRouter.get('/res_menu', async (req, res) => {
     var special_data = await F_Select(special_sql);
     var special_flag = special_data.msg[0].special_flag;
     // console.log(special_data.msg[0].special_flag);
-    console.log(data.msg.push({ "menu_id": 5, "menu_name": "Special", "active_flag": special_flag }));
+    // console.log(data.msg.push({ "menu_id": 5, "menu_name": "Special", "active_flag": special_flag }));
     res.send(data);
 })
 

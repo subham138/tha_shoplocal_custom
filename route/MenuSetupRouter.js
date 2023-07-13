@@ -214,10 +214,11 @@ MenuSetRouter.get('/res_dtls_custom', async (req, res) => {
     //             JOIN md_package c ON b.package_id=c.pakage_name
     //             JOIN md_url d ON a.id=d.restaurant_id
     //             JOIN td_users e ON a.id = e.restaurant_id AND e.active_flag = "Y" ${whr}`;
-    let sql = `SELECT a.*, e.name as country, a.country country_id 
+    let sql = `SELECT a.*, e.name as country, a.country country_id, IF((SELECT COUNT(*) FROM td_qustionnaire b WHERE a.id=b.hotel_id) > 0, 'Questionnaire Send', 'N') quest_status, IF((SELECT COUNT(*) FROM td_proposal c WHERE a.id=c.hotel_id) > 0, (SELECT d.status FROM td_proposal d WHERE a.id=d.hotel_id ORDER BY d.id DESC LIMIT 1), 'N') prop_status, IF(a.account_type = 'S', (SELECT f.agent_name FROM md_sales_agent f WHERE a.sales_agent = f.id), IF(a.account_type = 'U', (SELECT g.agent_name FROM md_sub_sales_agent g WHERE a.sales_agent = g.id), '')) agent_name 
     FROM td_contacts_custom a 
     JOIN md_country e ON a.country = e.id ${whr}`;
     var data = await F_Select(sql);
+    data['sql'] = sql
     res.send(data);
 })
 

@@ -20,9 +20,9 @@ QuestRouter.post('/quest_dt', async (req, res) => {
     var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss")
     var table_name = 'td_qustionnaire',
         fields = data.id > 0 ?
-            `${data.first_call_dt && data.first_call_dt != 'undefined' ? 'first_call_dt = "' + data.first_call_dt + '",' : ''} admin_note = '${data.admin_note}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
-            `(hotel_id${data.first_call_dt && data.first_call_dt != 'undefined' ? ', first_call_dt' : ''}, admin_note, created_by, created_dt)`,
-        values = `('${data.hotel_id}'${data.first_call_dt && data.first_call_dt != 'undefined' ? ', "' + data.first_call_dt + '"' : ''}, '${data.admin_note}', '${data.user}', '${datetime}')`,
+            `${data.first_call_dt && data.first_call_dt != 'undefined' ? 'first_call_dt = "' + data.first_call_dt + '",' : ''} admin_note = '${data.admin_note}', resend_flag = 'Y', resend_qts = '${data.add_quest}', reply_resend_qts = '${data.add_ans}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+            `(hotel_id${data.first_call_dt && data.first_call_dt != 'undefined' ? ', first_call_dt' : ''}, admin_note, send_dt, created_by, created_dt)`,
+        values = `('${data.hotel_id}'${data.first_call_dt && data.first_call_dt != 'undefined' ? ', "' + data.first_call_dt + '"' : ''}, '${data.admin_note}', '${datetime}', '${data.user}', '${datetime}')`,
         whr = data.id > 0 ? `id = ${data.id} AND hotel_id = ${data.hotel_id}` : null,
         flag = data.id > 0 ? 1 : 0;
     var res_dt = await db_Insert(table_name, fields, values, whr, flag)
