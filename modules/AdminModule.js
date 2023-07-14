@@ -702,7 +702,7 @@ const saveQuestRest = async (data) => {
                 WHERE id = ${dt.id}`
             } else {
                 sql = `INSERT INTO td_quest_res_bars (hotel_id, hotel_type, name, breakfast, lunch, dinner, brunch, bar_menu, special_menu, chat_option, reservation, reservation_paltform, reservation_option, created_by, created_dt) VALUES 
-    (${data.res_id}, '${dt.hotel_type}', '${dt.name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.bar_menu && dt.bar_menu != '' ? 'Y' : 'N'}', '${dt.special_menu && dt.special_menu != '' ? 'Y' : 'N'}', '${dt.chat_option}', '${dt.reservation}', '${dt.reservation_paltform && dt.reservation_paltform != '' ? 'Y' : 'N'}', ${dt.reservation_option && dt.reservation_option != '' ? 'Y' : null}, '${data.user}', '${datetime}')`;
+    (${data.res_id}, '${dt.hotel_type}', '${dt.name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.bar_menu && dt.bar_menu != '' ? 'Y' : 'N'}', '${dt.special_menu && dt.special_menu != '' ? 'Y' : 'N'}', '${dt.chat_option}', '${dt.reservation}', '${dt.reservation_paltform && dt.reservation_paltform != '' ? 'Y' : 'N'}', ${dt.reservation_option && dt.reservation_option != '' ? `'${dt.reservation_option}'` : null}, '${data.user}', '${datetime}')`;
             }
 
             db.query(sql, (err, lastId) => {
@@ -724,6 +724,7 @@ const saveQuestService = async (data) => {
     var sql, res;
     return new Promise((resolve, reject) => {
         for (let dt of data.serv_dt) {
+            console.log(dt.id > 0);
             if (dt.id > 0) {
                 sql = `UPDATE td_quest_service SET 
                 service_name = '${dt.service_name}', breakfast = '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', 
@@ -734,7 +735,7 @@ const saveQuestService = async (data) => {
                 WHERE id = ${dt.id}`
             } else {
                 sql = `INSERT INTO td_quest_service (hotel_id, service_name, breakfast, lunch, dinner, brunch, special, calendar, menu_service_list, chat_type, comments, created_by, created_dt) VALUES 
-    (${data.res_id}, '${dt.service_name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.special && dt.special != '' ? 'Y' : 'N'}', '${dt.calendar && dt.calendar != '' ? 'Y' : 'N'}', '${dt.menu_service_list && dt.menu_service_list != '' ? 'Y' : 'N'}', '${dt.chat_type}', '${dt.comments}', '${data.user}', '${datetime}')`;
+    (${data.res_id}, '${dt.service_name}', '${dt.breakfast && dt.breakfast != '' ? 'Y' : 'N'}', '${dt.lunch && dt.lunch != '' ? 'Y' : 'N'}', '${dt.dinner && dt.dinner != '' ? 'Y' : 'N'}', '${dt.brunch && dt.brunch != '' ? 'Y' : 'N'}', '${dt.special && dt.special != '' ? 'Y' : 'N'}', '${dt.calendar && dt.calendar != '' ? 'Y' : 'N'}', '${dt.menu_service_list && dt.menu_service_list != '' ? 'Y' : 'N'}', ${dt.chat_type && dt.chat_type != '' ? `'${dt.chat_type}'` : 'NULL'}, '${dt.comments}', '${data.user}', '${datetime}')`;
             }
 
             db.query(sql, (err, lastId) => {

@@ -132,4 +132,77 @@ QuestRouter.post('/quest_add_qts', async (req, res) => {
     res.send(res_dt)
 })
 
+QuestRouter.get('/test_srv', async (req, res) => {
+    var data = {
+        "res_id": "11",
+        "id": "0",
+        "serv_dt": [
+            {
+                "id": "",
+                "service_type": "F",
+                "menu_service_list": null,
+                "active_flag": null,
+                "service_name": "Front Desk",
+                "breakfast": null,
+                "lunch": null,
+                "dinner": null,
+                "brunch": null,
+                "special": null,
+                "calendar": null,
+                "chat_type": "",
+                "comments": null
+            },
+            {
+                "id": "",
+                "service_type": "R",
+                "active_flag": "Y",
+                "service_name": "Room Service",
+                "menu_service_list": null,
+                "breakfast": true,
+                "lunch": true,
+                "dinner": true,
+                "brunch": true,
+                "bar_menu": true,
+                "special": true,
+                "calendar": null,
+                "chat_type": "VC",
+                "comments": null
+            },
+            {
+                "id": 0,
+                "service_type": "O",
+                "menu_service_list": true,
+                "active_flag": null,
+                "service_name": "Makeover Room",
+                "breakfast": null,
+                "lunch": null,
+                "dinner": null,
+                "brunch": null,
+                "special": null,
+                "calendar": true,
+                "chat_type": "CO",
+                "comments": "test"
+            },
+            {
+                "id": 0,
+                "service_type": "O",
+                "menu_service_list": true,
+                "active_flag": null,
+                "service_name": "Spa",
+                "breakfast": null,
+                "lunch": null,
+                "dinner": null,
+                "brunch": null,
+                "special": null,
+                "calendar": true,
+                "chat_type": "CA",
+                "comments": "test2"
+            }
+        ],
+        "user": "Mitra Cafe"
+    };
+    var res_dt = await saveQuestService(data)
+    res.send(res_dt);
+})
+
 module.exports = { QuestRouter }
