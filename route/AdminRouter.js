@@ -1,10 +1,10 @@
 const express = require('express');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
-const { PackageSave, GetPackageData, PromoSave, GetResult, HolderClingSave, UpdateApproval, F_Delete, SaveEmailBody, SaveMenuInfo, ConfigMenu, DelRes, HelpTextSave, OtherText, OrderConfSave, GenerateBitlyUrl, ConfirmOrder, CreateVenue, DeleteVenue, CreateVenueMenu, DeleteVenueMenu, ApproveProposal, saveQuest, saveQuestLang, saveQuestRest, saveQuestService, sendQuest, DelResCustom } = require('../modules/AdminModule');
+const { PackageSave, GetPackageData, PromoSave, GetResult, HolderClingSave, UpdateApproval, F_Delete, SaveEmailBody, SaveMenuInfo, ConfigMenu, DelRes, HelpTextSave, OtherText, OrderConfSave, GenerateBitlyUrl, ConfirmOrder, CreateVenue, DeleteVenue, CreateVenueMenu, DeleteVenueMenu, ApproveProposal, saveQuest, saveQuestLang, saveQuestRest, saveQuestService, sendQuest, DelResCustom, generateOnlyBitlyUrl } = require('../modules/AdminModule');
 const { F_Select } = require('../modules/MenuSetupModule');
 const { SendPayProposal, sendQuestEmail } = require('../modules/EmailModule');
-const { db_Select, db_Insert } = require('../modules/MasterModule');
+const { db_Select, db_Insert, db_Delete } = require('../modules/MasterModule');
 const AdmRouter = express.Router(),
     dateFormat = require("dateformat");
 
@@ -289,6 +289,12 @@ AdmRouter.post('/create_bitly_url', async (req, res) => {
     res.send(data);
 })
 
+AdmRouter.post('/generate_bitly_url', async (req, res) => {
+    var url = req.body.url;
+    var data = await generateOnlyBitlyUrl(url);
+    res.send(data);
+})
+
 AdmRouter.get('/order_price', async (req, res) => {
     var res_id = req.query.id;
     let sql = `SELECT id, restaurant_id, setup_fee, monthly_fee, birth_calendar_price as cal_price, 
@@ -338,6 +344,14 @@ AdmRouter.post('/dept', async (req, res) => {
         whr = data.id > 0 ? `id=${data.id}` : null,
         flag = data.id > 0 ? 1 : 0;
     var res_dt = await db_Insert(table_name, fields, values, whr, flag)
+    res.send(res_dt)
+})
+
+AdmRouter.get('/del_dept', async (req, res) => {
+    var id = req.query.id
+    var table_name = 'md_department',
+    whr = `id = ${id}`;
+    var res_dt = await db_Delete(table_name, whr);
     res.send(res_dt)
 })
 

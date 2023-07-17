@@ -469,6 +469,34 @@ const GenerateBitlyUrl = async (url, hotel_id, srv_res_flag, srv_res_id) => {
 
 }
 
+const generateOnlyBitlyUrl = (url) => {
+    return new Promise((resolve, reject) => {
+        var res_dt = ''
+        var options = {
+            'method': 'POST',
+            'url': 'https://api-ssl.bitly.com/v4/shorten',
+            'headers': {
+                'Authorization': '9f526219992d43ac22e50e289fb09fd7c9cc25a2',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "domain": "bit.ly",
+                "long_url": url
+            })
+        };
+        request(options, async function (error, response) {
+            if (error){
+                res_dt = {suc:0, msg: error}
+            }
+            else{
+                data = JSON.parse(response.body);
+                res_dt = {suc: 1, msg: data.link, res: data}
+            }
+            resolve(res_dt)
+        })
+    })
+}
+
 const ConfirmOrder = (data) => {
     var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
     let sql = `UPDATE td_order_items SET confirm_flag = 'Y', modified_by = "${data.user}", modified_dt = "${datetime}" WHERE restaurant_id = ${data.res_id}`
@@ -752,4 +780,4 @@ const saveQuestService = async (data) => {
     })
 }
 
-module.exports = { PackageSave, GetPackageData, PromoSave, GetResult, HolderClingSave, UpdateApproval, CheckData, F_Delete, SaveEmailBody, SaveMenuInfo, ConfigMenu, DelRes, HelpTextSave, OtherText, DifImgSave, OrderConfSave, GenerateBitlyUrl, DifCovImgSave, ConfirmOrder, CreateVenue, DeleteVenue, CreateVenueMenu, DeleteVenueMenu, ApproveProposal, saveQuest, saveQuestLang, saveQuestRest, saveQuestService, sendQuest, DelResCustom };
+module.exports = { PackageSave, GetPackageData, PromoSave, GetResult, HolderClingSave, UpdateApproval, CheckData, F_Delete, SaveEmailBody, SaveMenuInfo, ConfigMenu, DelRes, HelpTextSave, OtherText, DifImgSave, OrderConfSave, GenerateBitlyUrl, DifCovImgSave, ConfirmOrder, CreateVenue, DeleteVenue, CreateVenueMenu, DeleteVenueMenu, ApproveProposal, saveQuest, saveQuestLang, saveQuestRest, saveQuestService, sendQuest, DelResCustom, generateOnlyBitlyUrl };
