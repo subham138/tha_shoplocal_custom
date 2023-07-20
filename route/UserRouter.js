@@ -7,8 +7,8 @@ const { db_Insert, db_Select, db_Delete } = require('../modules/MasterModule');
 UserRouter.post('/group_leader', async (req, res) => {
     var data = req.body,
         datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
-        table_name, fields, values, whr, flag, res_dt;
-	if (data.group_leader_flag == 'Y') {
+        table_name, fields, values, whr, flag, res_dt, group_id, grup_dt;
+	if (data.leader_flag == 'Y') {
 		table_name = 'td_group'
 		fields = data.id > 0 ? `group_name = '${data.group_name}', leader_name = '${data.user_name}', no_of_people = '${data.no_of_people}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
 			`(hotel_id, group_name, leader_name, no_of_people, created_by, created_dt)`
@@ -16,11 +16,25 @@ UserRouter.post('/group_leader', async (req, res) => {
 		whr = data.id > 0 ? `id = ${data.id}` : null
 		flag = data.id > 0 ? 1 : 0
 
-		var grup_dt = await db_Insert(table_name, fields, values, whr, flag)
-	}
-    var group_id = data.id > 0 ? data.id : (grup_dt.suc > 0 ? grup_dt.lastId.insertId : 0)
+		grup_dt = await db_Insert(table_name, fields, values, whr, flag)
+        group_id = data.id > 0 ? data.id : (grup_dt.suc > 0 ? grup_dt.lastId.insertId : 0)
 
-    if (group_id > 0) {
+        if (group_id > 0) {
+            res_dt = await SaveGuestUser(data, group_id)
+            res.send(res_dt) 
+        } else {
+            res.send(grup_dt)
+        }
+	}else{
+        res.send({suc: 0, msg: 'No Group Leader Found'})
+    }
+})
+
+const SaveGuestUser = (data, group_id) => {
+    return new Promise(async (resolve, reject) => {
+        var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+            table_name, fields, values, whr, flag, res_dt;
+
         var select = `COUNT(*) cunt_user, id`,
             table_name = 'td_guest_user',
             whr = `mobile_no = '${data.mobile_no}'`,
@@ -30,9 +44,9 @@ UserRouter.post('/group_leader', async (req, res) => {
         var password = bcrypt.hashSync(data.password, 10);
 
         table_name = 'td_guest_user'
-        fields = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? `user_name = '${data.user_name}', user_type = '${data.user_type}', mobile_no = '${data.phone_no}', email_id = '${data.email_id}', password = '${password}', group_emp_id = '${group_id}', group_leader_flag = '${data.leader_flag}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
-            `(hotel_id, user_name, user_type, mobile_no, email_id, password, group_emp_id, group_leader_flag, email_title, email_body, created_by, created_dt)`
-        values = `('${data.hotel_id}', '${data.user_name}', '${data.user_type}', '${data.mobile_no}', '${data.email_id}', '${password}', '${group_id}', '${data.leader_flag}', '${data.email_title}', '${data.email_body}', '${data.user}', '${datetime}')`
+        fields = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? `user_name = '${data.user_name}', user_type = '${data.user_type}', mobile_no = '${data.phone_no}', email_id = '${data.email_id}', password = '${password}', group_emp_id = '${group_id}', group_leader_flag = '${data.leader_flag}', pref_lang= '${data.language}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+            `(hotel_id, user_name, user_type, mobile_no, email_id, password, group_emp_id, group_leader_flag, pref_lang, email_title, email_body, created_by, created_dt)`
+        values = `('${data.hotel_id}', '${data.user_name}', '${data.user_type}', '${data.mobile_no}', '${data.email_id}', '${password}', '${group_id}', '${data.leader_flag}', '${data.language}', '${data.email_title}', '${data.email_body}', '${data.user}', '${datetime}')`
         whr = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? `id = ${chk_user.msg[0].id}` : null
         flag = chk_user.suc > 0 && chk_user.msg[0].cunt_user > 0 ? 1 : 0
         
@@ -55,20 +69,27 @@ UserRouter.post('/group_leader', async (req, res) => {
             flag = chk_user_log.suc > 0 && chk_user_log.msg[0].cunt_user > 0 ? 1 : 0
 
             res_dt = await db_Insert(table_name, fields, values, whr, flag)
+            resolve(res_dt)
+        }else{
+            resolve(res_dt)
         }
-        res.send(res_dt) 
-    } else {
-        res.send(grup_dt)
-    }
-})
+    })
+}
 
 UserRouter.get('/group_leader', async (req, res) => {
     var data = req.query
-    var select = 'c.id, c.hotel_id, c.group_name, c.leader_name, c.no_of_people, a.user_name, a.user_type, a.mobile_no, a.email_id, a.group_leader_flag, a.email_title, a.email_body, b.check_in, b.check_out, b.room_no, b.status_flag',
+    var select = `c.id, c.hotel_id, c.group_name, c.leader_name, c.no_of_people, a.user_name, a.user_type, a.mobile_no, a.email_id, a.group_leader_flag, a.email_title, a.email_body, b.check_in, b.check_out, b.room_no, b.status_flag,a.pref_lang, (SELECT COUNT(e.id) FROM td_guest_user e where c.id=e.group_emp_id AND c.hotel_id=e.hotel_id AND e.group_leader_flag='N') tot_mem`,
         table_name = 'td_group c, td_guest_user a, td_lodgging b',
         whr = data.id > 0 ? `a.id = ${data.id}` : `c.id=a.group_emp_id AND a.id=b.guest_id AND a.hotel_id = ${data.hotel_id} AND a.user_type = 'G' AND b.check_in <= now() AND b.check_out >= now()`,
         order = null
     var res_dt = await db_Select(select, table_name, whr, order)
+    res.send(res_dt)
+})
+
+UserRouter.get('/group_leader_del', async (req, res) => {
+    var data = req.query
+    var table_name='td_group', whr=`id=${data.id}`; 
+    var res_dt= await db_Delete(table_name,whr)
     res.send(res_dt)
 })
 

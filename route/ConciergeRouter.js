@@ -68,6 +68,13 @@ ConcRouter.post('/pc_voice', async (req, res) => {
     }
 })
 
+ConcRouter.get('/pc_voice_del', async (req, res) =>{
+    var data = req.query
+    var table_name = `td_pc_voice`, whr = `id = ${data.id}`;
+    var res_dt=await db_Delete(table_name, whr)
+    res.send(res_dt)
+})
+
 const saveVoice = async (data, voice_path) => {
     return new Promise(async (resolve, reject) => {
         // if (data.id > 0) {
@@ -255,20 +262,61 @@ ConcRouter.post('/emp_dtls_del', async (req, res) => {
     res.send(res_dt)
 })
 
+// ConcRouter.post('/dept_user_dtls', async (req, res) => {
+//     var data = req.body,
+//         datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), res_dt;
+//     // console.log(data);
+//     if (data.id == 0) {
+//         var table_name = 'td_guest_user',
+//             fields = '(hotel_id, user_name, user_type, mobile_no, email_id, group_leader_flag, dept_id, created_by, created_dt)',
+//             values = `('${data.hotel_id}', '${data.emp_name}', '${data.user_type}', '${data.phone_no}', '${data.email}', '${data.group_leader_flag}', ${data.dept_id}, '${data.user}', '${datetime}')`,
+//             whr = null,
+//             flag = 0
+//         res_dt = await db_Insert(table_name, fields, values, whr, flag)
+//     }
+//     var emp_id = data.id > 0 ? data.id : (res_dt.suc > 0 ? res_dt.lastId.insertId : 0)
+//     if (emp_id > 0) {
+//         if (data.msg_type.length > 0) {
+//             for (let msg of data.msg_type) {
+//                 for (let day of data.day_dt) {
+//                     select = `count(id) cnt_id, id`
+//                     table_name = 'td_emp_schedule'
+//                     whr = `hotel_id = ${data.hotel_id} AND msg_type = '${msg.id}' AND emp_id = '${emp_id}' AND day_dt = '${day.code}'`
+//                     let dt = await db_Select(select, table_name, whr, null)
+//                     table_name = 'td_emp_schedule'
+//                     fields = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? `date_on_off = '${day.off_on ? 'Y' : 'N'}', start_time = '${day.start > 0 ? day.start : "00:00:00"}', end_time = '${day.end > 0 ? day.end : "00:00:00"}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+//                         '(hotel_id, msg_type, emp_id, emp_code, day_dt, date_on_off, start_time, end_time, created_by, created_dt)'
+//                     values = `('${data.hotel_id}', '${msg.id}', '${emp_id}', '${data.emp_id}', '${day.code}', '${day.off_on ? 'Y' : 'N'}', '${day.start > 0 ? day.start : "00:00:00"}', '${day.end > 0 ? day.end : "00:00:00"}', '${data.user}', '${datetime}')`
+//                     whr = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? `id = ${dt.msg[0].id}` : null
+//                     flag = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? 1 : 0
+//                     res_dt = await db_Insert(table_name, fields, values, whr, flag)
+//                 }
+//             }
+//         }
+//     }
+//     res.send(res_dt)
+// })
+
 ConcRouter.post('/dept_user_dtls', async (req, res) => {
     var data = req.body,
         datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), res_dt;
     // console.log(data);
-    if (data.id == 0) {
-        var table_name = 'td_guest_user',
-            fields = '(hotel_id, user_name, user_type, mobile_no, email_id, group_leader_flag, dept_id, created_by, created_dt)',
-            values = `('${data.hotel_id}', '${data.emp_name}', '${data.user_type}', '${data.phone_no}', '${data.email}', '${data.group_leader_flag}', ${data.dept_id}, '${data.user}', '${datetime}')`,
-            whr = null,
-            flag = 0
-        res_dt = await db_Insert(table_name, fields, values, whr, flag)
-    }
+    var table_name = 'td_guest_user',
+        fields = data.id > 0 ? `user_name = '${data.user_name}', mobile_no = '${data.mobile_no}', email_id = '${data.email_id}'` : '(hotel_id, user_name, user_type, mobile_no, email_id, group_leader_flag, dept_id, created_by, created_dt)',
+        values = `('${data.hotel_id}', '${data.user_name}', '${data.user_type}', '${data.mobile_no}', '${data.email_id}', '${data.group_leader_flag}', ${data.dept_id[0].id}, '${data.user}', '${datetime}')`,
+        whr = data.id > 0 ? `id = ${data.id}` : null,
+        flag = data.id > 0 ? 1 : 0;
+    res_dt = await db_Insert(table_name, fields, values, whr, flag)
     var emp_id = data.id > 0 ? data.id : (res_dt.suc > 0 ? res_dt.lastId.insertId : 0)
     if (emp_id > 0) {
+        res_dt = await saveEmpSchedule(data, emp_id)
+    }
+    res.send(res_dt)
+})
+
+const saveEmpSchedule = (data, emp_id) => {
+    return new Promise(async (resolve, reject) => {
+        var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"), res_dt;
         if (data.msg_type.length > 0) {
             for (let msg of data.msg_type) {
                 for (let day of data.day_dt) {
@@ -277,24 +325,26 @@ ConcRouter.post('/dept_user_dtls', async (req, res) => {
                     whr = `hotel_id = ${data.hotel_id} AND msg_type = '${msg.id}' AND emp_id = '${emp_id}' AND day_dt = '${day.code}'`
                     let dt = await db_Select(select, table_name, whr, null)
                     table_name = 'td_emp_schedule'
-                    fields = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? `date_on_off = '${day.off_on ? 'Y' : 'N'}', start_time = '${day.start > 0 ? day.start : "00:00:00"}', end_time = '${day.end > 0 ? day.end : "00:00:00"}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+                    fields = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? `date_on_off = '${day.off_on ? 'Y' : 'N'}', start_time = '${day.active_flag ? day.start : "00:00:00"}', end_time = '${day.active_flag ? day.end : "00:00:00"}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
                         '(hotel_id, msg_type, emp_id, emp_code, day_dt, date_on_off, start_time, end_time, created_by, created_dt)'
-                    values = `('${data.hotel_id}', '${msg.id}', '${emp_id}', '${data.emp_id}', '${day.code}', '${day.off_on ? 'Y' : 'N'}', '${day.start > 0 ? day.start : "00:00:00"}', '${day.end > 0 ? day.end : "00:00:00"}', '${data.user}', '${datetime}')`
+                    values = `('${data.hotel_id}', '${msg.id}', '${emp_id}', '${emp_id}', '${day.code}', '${day.off_on ? 'Y' : 'N'}', '${day.active_flag ? day.start : "00:00:00"}', '${day.active_flag ? day.end : "00:00:00"}', '${data.user}', '${datetime}')`
                     whr = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? `id = ${dt.msg[0].id}` : null
                     flag = dt.suc > 0 && dt.msg[0].cnt_id > 0 ? 1 : 0
                     res_dt = await db_Insert(table_name, fields, values, whr, flag)
                 }
             }
+            resolve(res_dt)
+        }else{
+            resolve({suc:0, msg: 'No Schedule Found'})
         }
-    }
-    res.send(res_dt)
-})
+    })
+}
 
 ConcRouter.get('/dept_user_dtls', async (req, res) => {
     var data = req.query
-    var select = 'b.id, a.hotel_id, b.user_name, b.user_type, c.dept_name, b.dept_id, a.emp_code',
+    var select = 'b.id, a.hotel_id, b.user_name, b.user_type, c.dept_name, b.dept_id, a.emp_code, b.mobile_no, b.email_id, b.email_title, b.email_body',
         table_name = 'td_emp_schedule a, td_guest_user b, md_department c',
-        whr = `a.emp_id=b.id AND b.dept_id=c.id ${data.hotel_id > 0 ? 'AND a.hotel_id =' + data.hotel_id : ''} ${data.id > 0 ? 'AND b.id =' + data.id : ''}`,
+        whr = `a.emp_id=b.id AND b.dept_id=c.id ${data.hotel_id > 0 ? 'AND a.hotel_id =' + data.hotel_id : ''} ${data.id > 0 ? 'AND b.id =' + data.id : ''} AND b.user_type = 'E'`,
         order = 'GROUP BY a.emp_id'
     var res_dt = await db_Select(select, table_name, whr, order)
     if (res_dt.suc > 0 && res_dt.msg.length > 0) {

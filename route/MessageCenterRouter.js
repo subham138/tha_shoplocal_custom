@@ -316,7 +316,7 @@ setInterval(async () => {
     "id, hotel_id, audience, img_path, msg_title, msg_subtitle, msg_body, dept_link, time_period_msg, message_center_type, extended_flag, msg_snt_frm_time, msg_snt_to_time",
     table_name = "td_notification",
     //   whr = `msg_snt_type = 'W' AND msg_snt_frm_time <= TIME(NOW()) AND msg_snt_to_time >= TIME(NOW())`,
-    whr = `msg_snt_type = 'W' AND msg_snt_day = date_format(now(), '%W')`,
+    whr = `msg_snt_type = 'W' AND msg_snt_day = date_format(now(), '%W') AND date_format(msg_snt_time, '%H:%i') = date_format(now(), '%H:%i')`,
     order = null;
   var res_dt = await db_Select(select, table_name, whr, order);
   if (res_dt.suc > 0 && res_dt.msg.length > 0) {
@@ -538,6 +538,9 @@ const sendHotelMessage = (id) => {
     console.log(res_dt);
     if(res_dt.suc > 0 && res_dt.msg.length > 0){
       if(res_dt.msg[0].audience == '1A'){
+        if(res_dt.msg[0].msg_snt_type == 'W'){
+
+        }
         var token = []
         var select = 'a.id, a.id user_id, a.user_name, a.app_token_id, b.check_in, b.check_out', 
         table_name = `td_guest_user a, td_lodgging b`, 
