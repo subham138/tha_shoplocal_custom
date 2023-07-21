@@ -83,11 +83,11 @@ const saveVoice = async (data, voice_path) => {
         var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         var table_name = 'td_pc_voice',
             fields = data.id > 0 ? `${voice_path ? 'sound_path ="' + voice_path + '",' : ''}${data.active_flag == 'V' ? ' sound_flag = "N",' : (data.active_flag == 'T' ? ', msg_active_flag = "N",' : '')}
-            msg_text = '${data.msg_text}', voice_id = '${data.voice_id}', voice_speed = "${data.voice_speed ? data.voice_speed : 0}", use_premium = "${data.use_premium}", voice_path = '${data.voice_path}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
+            msg_text = '${data.msg_text}', voice_id = '${data.voice_id}', voice_speed = "${data.voice_speed ? data.voice_speed : 0}", use_premium = "${data.use_premium}", voice_path = '${data.voice_path}', voice_type = '${data.voice_type}', modified_by = '${data.user}', modified_dt = '${datetime}'` :
                 `(hotel_id, srv_res_flag, srv_res_id${voice_path ? ', sound_path' : ''}, voice_id, voice_speed, use_premium, voice_path
-                ${data.active_flag == 'V' ? 'sound_flag' : (data.active_flag == 'T' ? 'msg_active_flag' : '')}, msg_text, created_by, created_dt)`,
+                ${data.active_flag == 'V' ? 'sound_flag' : (data.active_flag == 'T' ? 'msg_active_flag' : '')}, msg_text, voice_type, created_by, created_dt)`,
             values = `('${data.hotel_id}', '${data.srv_res_flag}', '${data.srv_res_id}'${voice_path ? ',"' + voice_path + '"' : ''}, 
-            '${data.voice_id}', ${data.voice_speed}, ${data.use_premium}, '${data.voice_path}'${data.active_flag == 'T' || data.active_flag == 'V' ? ', N' : ''}, '${data.msg_text}', 
+            '${data.voice_id}', ${data.voice_speed}, ${data.use_premium}, '${data.voice_path}'${data.active_flag == 'T' || data.active_flag == 'V' ? ', N' : ''}, '${data.msg_text}', '${data.voice_type}',
             '${data.user}', '${datetime}')`,
             whr = data.id > 0 ? `id = ${data.id}` : null,
             flag = data.id > 0 ? 1 : 0;
